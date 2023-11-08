@@ -23,8 +23,31 @@ class MyTextField extends StatefulWidget {
 }
 
 class _MyTextFieldState extends State<MyTextField> {
-  bool isFocused = false;
-  bool isPasswordVisible = false;
+  late bool isFocused;
+  late bool isPasswordVisible;
+
+  @override
+  void initState() {
+    super.initState();
+    isFocused = false;
+    isPasswordVisible = false;
+  }
+
+  void setFocused(bool focused) {
+    if (isFocused != focused) {
+      setState(() {
+        isFocused = focused;
+      });
+    }
+  }
+
+  void setPasswordVisibility(bool visible) {
+    if (isPasswordVisible != visible) {
+      setState(() {
+        isPasswordVisible = visible;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,35 +85,29 @@ class _MyTextFieldState extends State<MyTextField> {
                   ),
                   enabled: widget.isEnabled,
                   onTap: () {
-                    setState(() {
-                      isFocused = true;
-                    });
+                    setFocused(true);
                   },
                   onSubmitted: (value) {
-                    setState(() {
-                      isFocused = false;
-                    });
+                    setFocused(false);
                   },
                   onEditingComplete: () {
-                    setState(() {
-                      isFocused = false;
-                    });
+                    setFocused(false);
                   },
                 ),
                 if (widget.obscureText)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isPasswordVisible = !isPasswordVisible;
-                      });
-                    },
-                    child: Icon(
-                      isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        setPasswordVisibility(!isPasswordVisible);
+                      },
+                      child: Icon(
+                        isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ],
@@ -99,9 +116,3 @@ class _MyTextFieldState extends State<MyTextField> {
     );
   }
 }
-
-
-
-
-
-

@@ -26,13 +26,22 @@ class _ScreensState extends State<Screens> {
     FirebaseAuth.instance.signOut();
   }
 
-
   @override
   void initState() {
     super.initState();
 
     _screens = [
-      InicioScreen(user: user!, incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0, long: 0, imageUrl: '', audioUrl: ''), denunciaData: DenuncianteData(ci: 1, fullName: '', phone: 1, lat: 0, long: 0)),
+      InicioScreen(
+          user: user!,
+          incidentData: IncidentData(
+              description: '',
+              date: DateTime.now(),
+              lat: 0,
+              long: 0,
+              imageUrl: '',
+              audioUrl: ''),
+          denunciaData:
+              DenuncianteData(ci: 1, fullName: '', phone: 1, lat: 0, long: 0)),
       const SobreScreen(),
       PerfilScreen(user: user!),
     ];
@@ -55,7 +64,8 @@ class _ScreensState extends State<Screens> {
             Container(
               color: const Color.fromRGBO(192, 108, 132, 1),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12),
                 child: GNav(
                   backgroundColor: const Color.fromRGBO(192, 108, 132, 1),
                   color: Colors.white,
