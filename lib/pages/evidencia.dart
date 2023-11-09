@@ -15,6 +15,7 @@ import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/row_button.dart';
 import 'package:miamiga_app/pages/map.dart';
 import 'package:miamiga_app/pages/supervisor.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class CasePage extends StatefulWidget {
   final String item;
@@ -254,15 +255,25 @@ class _CasePageState extends State<CasePage> {
 
       audioTitle = file.name;
 
-      await audioPlayer.setSourceUrl(selectedAudioPath!);
+      print('audioRuta______$selectedAudioPath');
 
-      duration = (await audioPlayer.getDuration())!;
-
-      setState(() {
-        isMediaReceived = true;
-      });
+      // Intenta cargar y reproducir el audio
+      try {
+        await audioPlayer.setSourceUrl(selectedAudioPath!);
+        await audioPlayer.getDuration().then((value) {
+          if (value != null) {
+            setState(() {
+              duration = value;
+              isMediaReceived = true;
+            });
+          }
+        });
+      } catch (e) {
+        print('Error al cargar/reproducir el audio: $e');
+        // Maneja el error aquí (por ejemplo, muestra un mensaje al usuario)
+      }
     } else {
-      // User canceled the picker
+      // El usuario canceló la selección
       selectedAudioPath = null;
     }
   }
@@ -533,27 +544,33 @@ class _CasePageState extends State<CasePage> {
               const Row(
                 children: [
                   Header(
-                    header: 'Datos del Evidencia',
+                    header: 'Datos de la Evidencia',
                   ),
                 ],
               ),
               const SizedBox(height: 15),
               Row(
                 children: [
-                  RowButton(
-                    onTap: cargarImagen,
-                    text: 'Imagen',
-                    icon: Icons.image,
+                  Expanded(
+                    child: RowButton(
+                      onTap: cargarImagen,
+                      text: 'Imagen',
+                      icon: Icons.image,
+                    ),
                   ),
-                  RowButton(
-                    onTap: cargarDocumento,
-                    text: 'Documento',
-                    icon: Icons.file_copy,
+                  Expanded(
+                    child: RowButton(
+                      onTap: cargarDocumento,
+                      text: 'Documento',
+                      icon: Icons.file_copy,
+                    ),
                   ),
-                  RowButton(
-                    onTap: cargarAudio,
-                    text: 'Audio',
-                    icon: Icons.audiotrack,
+                  Expanded(
+                    child: RowButton(
+                      onTap: cargarAudio,
+                      text: 'Audio',
+                      icon: Icons.audiotrack,
+                    ),
                   ),
                 ],
               ),
