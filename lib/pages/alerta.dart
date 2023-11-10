@@ -1,7 +1,11 @@
+// ignore_for_file: library_prefixes, depend_on_referenced_packages
+
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:miamiga_app/components/important_button.dart';
 import 'package:miamiga_app/components/my_button.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
@@ -10,6 +14,7 @@ import 'package:miamiga_app/model/datos_incidente.dart';
 import 'package:miamiga_app/pages/alerta_oficial.dart';
 import 'package:miamiga_app/pages/incidente.dart';
 import 'package:miamiga_app/pages/ventanas_usuario.dart';
+import 'package:path/path.dart' as Path;
 
 class AlertaScreen extends StatefulWidget {
   final User? user;
@@ -28,14 +33,39 @@ class AlertaScreen extends StatefulWidget {
 
 class _AlertaScreenState extends State<AlertaScreen> {
 
-  List<XFile> pickedImages = [];
-  List<XFile> pickedVideoFile = [];
+  // final storeData = StoreData();
+
+  Future<List<String>> uploadImageFile(List<File> files) async {
+    List<String> downloadUrls = [];
+    for (File file in files) {
+      String fileName = Path.basename(file.path);
+      Reference ref = FirebaseStorage.instance.ref().child('Images/$fileName');
+      UploadTask uploadTask = ref.putFile(file);
+      TaskSnapshot taskSnapshot = await uploadTask;
+      final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+      downloadUrls.add(downloadUrl);
+    }
+    return downloadUrls;
+  }
+
+  Future<String> uploadAudioFile(File file) async {
+    String fileName = Path.basename(file.path);
+    Reference ref = FirebaseStorage.instance.ref().child('Audios/$fileName');
+    UploadTask uploadTask = ref.putFile(file);
+    TaskSnapshot taskSnapshot = await uploadTask;
+    final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+    return downloadUrl;
+  }
 
   void editarDenuncia() async{
     //i want a navigator to go to the edit perfil page
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => DenunciaIncidente(user: widget.user, incidentData: widget.incidentData, denuncianteData: widget.denuncianteData), 
+        builder: (context) => DenunciaIncidente(
+          user: widget.user, 
+          incidentData: widget.incidentData, 
+          denuncianteData: widget.denuncianteData
+        ), 
       ),
     );
   }
@@ -96,6 +126,11 @@ class _AlertaScreenState extends State<AlertaScreen> {
   }
 
   void createCase(User? user, DenuncianteData denuncianteData, IncidentData incidentData) async {
+
+    List<File> imageFiles = incidentData.imageUrls.map((e) => File(e)).toList();
+    List<String> imageUrls = await uploadImageFile(imageFiles);
+    String audioUrl = await uploadAudioFile(File(incidentData.audioUrl));
+
     //i want to create the document of my case
 
     final CollectionReference _case = 
@@ -116,8 +151,8 @@ class _AlertaScreenState extends State<AlertaScreen> {
         'fechaIncidente': incidentData.date,
         'lat': incidentData.lat,
         'long': incidentData.long,
-        'imageUrl': incidentData.imageUrl,
-        'audioUrl': incidentData.audioUrl,
+        'imageUrl': imageUrls,
+        'audioUrl': audioUrl,
       },
 
       'estado': 'pendiente',

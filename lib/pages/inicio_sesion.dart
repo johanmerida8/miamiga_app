@@ -59,17 +59,13 @@ class _IniciarSesionState extends State<IniciarSesion> {
         // Navigator.pop(context); //quitar el dialogo de carga
 
         if (role == 'Supervisor') {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const ScreenSupervisor(),
-            ),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/screens_supervisor');
+          });
         } else if (role == 'Usuario Normal') {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const Screens(),
-            ),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/screens_usuario');
+          });
         }
       } else {
         Navigator.pop(context);

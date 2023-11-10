@@ -56,7 +56,7 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> with Widg
         }
       }
 
-      position = await Geolocator.getCurrentPosition();
+      position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     } catch (e) {
       print('Error obteniendo ubicación actual: $e');
     }
@@ -135,6 +135,7 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> with Widg
         alignment: WrapAlignment.spaceBetween,
         children: [
           FloatingActionButton.extended(
+            heroTag: 'currentLocation',
             onPressed: () {
               final selectedLocation = {
                 'latitude': markers.first.position.latitude,
@@ -149,6 +150,7 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> with Widg
           ),
           const SizedBox(width: 16),
           FloatingActionButton.extended(
+            heroTag: 'cancel',
             onPressed: () {
               // Cancel button action
               Navigator.of(context).pop();

@@ -1,10 +1,12 @@
 // ignore_for_file: avoid_print
 
 
+import 'package:audioplayers/audioplayers.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/model/datos_denunciante.dart';
@@ -31,6 +33,11 @@ class _DetalleDenunciaState extends State<DetalleDenuncia> {
 
   final descripcionController = TextEditingController();
   final fechaController = TextEditingController();
+  final locationController = TextEditingController();
+
+
+  double lat = 0.0;
+  double long = 0.0;
 
   final CollectionReference _details = 
         FirebaseFirestore.instance.collection('cases');
@@ -64,18 +71,43 @@ class _DetalleDenunciaState extends State<DetalleDenuncia> {
             if (incidenteData != null) {
               final Map<String, dynamic> incidente = incidenteData as Map<String, dynamic>;
               final descripcionIncidente = incidente['descripcionIncidente'] ?? '';
-
-              // final fechaIncidenteTimestamp = incidente['fechaIncidente'] as Timestamp;
-              // final fechaIncidente = fechaIncidenteTimestamp.toDate();
-              // final formattedFechaIncidente = DateFormat('yyyy-MM-dd HH:mm').format(fechaIncidente).toString();
-
               final fechaIncidente = incidente['fechaIncidente'] ?? '';
+              final latitude = incidente['lat'] ?? 0.0;
+              final longitude = incidente['long'] ?? 0.0;
+              final imageUrl = incidente['imageUrl'] ?? '';
+              final audioUrl = incidente['audioUrl'] ?? '';
+              final documentUrl = incidente['document'] ?? '';
 
-              // Set the text controller values
               setState(() {
                 descripcionController.text = descripcionIncidente;
                 fechaController.text = fechaIncidente;
+                locationController.text = latitude.toString();
+                locationController.text = latitude.toString();
+                imageUrl;
+                audioUrl;
+                documentUrl;
               });
+
+              lat = latitude;
+              long = longitude;
+
+              final List<Placemark> placemarks = await placemarkFromCoordinates(
+                latitude, 
+                longitude
+              );
+
+              if (placemarks.isNotEmpty) {
+                final Placemark placemark = placemarks[0];
+                final String street = placemark.thoroughfare ?? '';
+                final String locality = placemark.locality ?? '';
+                final String country = placemark.country ?? '';
+
+                final locationString = '$street, $locality, $country';
+                locationController.text = locationString; 
+
+              } else {
+                locationController.text = 'No se pudo obtener la ubicación';
+              }
             }
           } else {
             // Handle the case where no cases are assigned to the supervisor
@@ -96,6 +128,11 @@ class _DetalleDenunciaState extends State<DetalleDenuncia> {
 }
 
 
+@override
+void initState() {
+  super.initState();
+  _fetchData();
+}
 
   
 
@@ -132,45 +169,83 @@ class _DetalleDenunciaState extends State<DetalleDenuncia> {
 
                   const SizedBox(height: 15),
 
-                  FutureBuilder(
-                    future: _fetchData(), 
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      } else if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');  
-                      } else {
-                        if (mounted) {
-                          return Column(
-                            children: [
-                              const SizedBox(height: 25),
-                              MyTextField(
-                                controller: descripcionController, 
-                                hintText: 'Descripción del Incidente', 
-                                text: 'Descripción del Incidente', 
-                                obscureText: false, 
-                                isEnabled: false, 
-                                isVisible: true,
-                              ),
-                              const SizedBox(height: 25),
-                              MyTextField(
-                                controller: fechaController, 
-                                hintText: 'Fecha del Incidente', 
-                                text: 'Fecha del Incidente', 
-                                obscureText: false, 
-                                isEnabled: false, 
-                                isVisible: true,
-                              )
-                            ],
-                          );
-                        } else {
-                          return Container();
-                        }
-                      }
-                    }
-                  )
+                  // FutureBuilder(
+                  //   future: _fetchData(), 
+                  //   builder: (context, snapshot) {
+                  //     if (snapshot.connectionState == ConnectionState.waiting) {
+                  //       return const Center(
+                  //         child: CircularProgressIndicator(),
+                  //       );
+                  //     } else if (snapshot.hasError) {
+                  //       return Text('Error: ${snapshot.error}');  
+                  //     } else {
+                  //       if (mounted) {
+                  //         return Column(
+                  //           children: [
+                  //             CarouselSlider(
+                  //               options: CarouselOptions(height: 400.0),
+                  //               items: imageUrls.map((i) {
+                  //                 return Builder(
+                  //                   builder: (BuildContext context) {
+                  //                     return Container(
+                  //                       width: MediaQuery.of(context).size.width,
+                  //                       margin: EdgeInsets.symmetric(horizontal: 5.0),
+                  //                       decoration: BoxDecoration(color: Colors.amber),
+                  //                       child: Image.network(i, fit: BoxFit.cover),
+                  //                     );
+                  //                   },
+                  //                 );
+                  //               }).toList(),
+                  //             ),
+                  //             IconButton(
+                  //               onPressed: () {
+                  //                 // Code to play and pause the audio
+                  //                 AudioPlayer audioPlayer = AudioPlayer();
+                  //                 audioPlayer.play(audioUrl);
+                  //               }, 
+                  //               icon: const Icon(Icons.play_arrow_rounded),
+                  //             ),
+                  //             IconButton(
+                  //               onPressed: () {
+                  //                 // Code to open the document
+                  //               }, 
+                  //               icon: const Icon(Icons.picture_as_pdf_rounded),
+                  //             ),
+                  //             const SizedBox(height: 25),
+                  //             MyTextField(
+                  //               controller: descripcionController, 
+                  //               hintText: 'Descripción del Incidente', 
+                  //               text: 'Descripción del Incidente', 
+                  //               obscureText: false, 
+                  //               isEnabled: false, 
+                  //               isVisible: true,
+                  //             ),
+                  //             const SizedBox(height: 25),
+                  //             MyTextField(
+                  //               controller: fechaController, 
+                  //               hintText: 'Fecha del Incidente', 
+                  //               text: 'Fecha del Incidente', 
+                  //               obscureText: false, 
+                  //               isEnabled: false, 
+                  //               isVisible: true,
+                  //             ),
+                  //             const SizedBox(height: 25),
+                  //             MyTextField(
+                  //               controller: locationController, 
+                  //               hintText: 'Ubicación del Incidente', 
+                  //               text: 'Ubicación del Incidente', 
+                  //               obscureText: false, 
+                  //               isEnabled: false, 
+                  //               isVisible: true,
+                  //             ),
+                  //           ],
+                  //         );
+                  //       } else {
+                  //         return Container();
+                  //       }
+                  //     }
+                  //   }
+                  // )
                 ],
               ),
             ],

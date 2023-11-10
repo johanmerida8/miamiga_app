@@ -8,6 +8,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -93,9 +94,9 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
       widget.incidentData.long = 0.0;
     }
     if (isImageReceived && pickedImages.isNotEmpty) {
-      widget.incidentData.imageUrl = pickedImages[0].path;
+      widget.incidentData.imageUrls = pickedImages.map((e) => e.path).toList();
     } else {
-      widget.incidentData.imageUrl = '';
+      widget.incidentData.imageUrls = [];
     }
     if (isMediaReceived && selectedAudioPath != null) {
       widget.incidentData.audioUrl = selectedAudioPath!;
@@ -111,7 +112,7 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
     print('Fecha: ${widget.incidentData.date}');
     print('Latitud: ${widget.incidentData.lat}');
     print('Longitud: ${widget.incidentData.long}');
-    print('URL de imagen: ${widget.incidentData.imageUrl}');
+    print('URL de imagen: ${widget.incidentData.imageUrls}');
     print('URL de audio: ${widget.incidentData.audioUrl}');
 
   try {
@@ -259,6 +260,7 @@ void cargarImagen() async {
 
 
 Future<void> pickAudio() async {
+  print('pickAudio: selectedAudioPath: $selectedAudioPath');
   FilePickerResult? result = await FilePicker.platform.pickFiles(
     type: FileType.audio,
   );
@@ -391,45 +393,57 @@ void cargarAudio() async{
 
 
   Future<Map<String, String>> getUserModifiedLocation() async {
-    try {
-      final List<Placemark> placemarks = await placemarkFromCoordinates(
-        lat,
-        long,
-      );
+  try {
+    final List<Placemark> placemarks = await placemarkFromCoordinates(
+      lat,
+      long,
+    );
 
-      if (placemarks.isNotEmpty) {
-        final Placemark placemark = placemarks[0];
-        final String calle = placemark.thoroughfare ?? '';
-        final String avenida = placemark.subLocality ?? '';
-        final String localidad = placemark.locality ?? '';
-        final String pais = placemark.country ?? '';
+    if (placemarks.isNotEmpty) {
+      final Placemark placemark = placemarks[0];
+      final String calle = placemark.thoroughfare ?? '';
+      final String avenida = placemark.subLocality ?? '';
+      final String localidad = placemark.locality ?? '';
+      final String pais = placemark.country ?? '';
 
-        final String fullStreet = avenida.isNotEmpty
-          ? '$calle, $avenida'
-          : calle;
+      final String fullStreet = avenida.isNotEmpty
+        ? '$calle, $avenida'
+        : calle;
 
-        return {
-          'street': fullStreet,
-          'locality': localidad,
-          'country': pais,
-        };
-      } else {
-        return {
-          'street': 'No se pudo obtener la ubicacion',
-          'locality': 'No se pudo obtener la ubicacion',
-          'country': 'No se pudo obtener la ubicacion',
-        };
-      }
-    } catch (e) {
-      // ignore: avoid_print
-      print('Error al obtener la ubicacion modificada: $e');
+      return {
+        'street': fullStreet,
+        'locality': localidad,
+        'country': pais,
+      };
+    } else {
       return {
         'street': 'No se pudo obtener la ubicacion',
         'locality': 'No se pudo obtener la ubicacion',
         'country': 'No se pudo obtener la ubicacion',
       };
     }
+  } on PlatformException catch (e) {
+    if (e.code == 'NOT_FOUND') {
+      // Handle the exception
+      print('No address found for the provided coordinates.');
+    } else {
+      // Re-throw the exception if it's not the one we're handling
+      rethrow;
+    }
+    return {
+      'street': 'No se pudo obtener la ubicacion',
+      'locality': 'No se pudo obtener la ubicacion',
+      'country': 'No se pudo obtener la ubicacion',
+    };
+  } catch (e) {
+    print('Error al obtener la ubicacion modificada: $e');
+    return {
+      'street': 'No se pudo obtener la ubicacion',
+      'locality': 'No se pudo obtener la ubicacion',
+      'country': 'No se pudo obtener la ubicacion',
+    };
   }
+}
 
 
   bool changesMade = false;
@@ -471,15 +485,19 @@ void cargarAudio() async{
         
                     Row(
                       children: [
-                        RowButton(
-                          onTap: cargarImagen, 
-                          text: 'Imagen',
-                          icon: Icons.image,
+                        Expanded(
+                          child: RowButton(
+                            onTap: cargarImagen, 
+                            text: 'Imagen',
+                            icon: Icons.image,
+                          ),
                         ),
-                        RowButton(
-                          onTap: cargarAudio, 
-                          text: 'Audio',
-                          icon: Icons.audio_file,
+                        Expanded(
+                          child: RowButton(
+                            onTap: cargarAudio, 
+                            text: 'Audio',
+                            icon: Icons.audio_file,
+                          ),
                         ),
                       ],
                     ),

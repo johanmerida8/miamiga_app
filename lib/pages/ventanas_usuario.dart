@@ -38,7 +38,7 @@ class _ScreensState extends State<Screens> {
               date: DateTime.now(),
               lat: 0,
               long: 0,
-              imageUrl: '',
+              imageUrls: [],
               audioUrl: ''),
           denunciaData:
               DenuncianteData(ci: 1, fullName: '', phone: 1, lat: 0, long: 0)),

@@ -32,7 +32,7 @@ class _ScreenSupervisorState extends State<ScreenSupervisor> {
 
     _screens = [
       CasePage(item: user!.uid),
-      ReadCases(user: user!, incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0, long: 0, imageUrl: '', audioUrl: ''), denuncianteData: DenuncianteData(ci: 1, fullName: '', phone: 1, lat: 0, long: 0)),
+      ReadCases(user: user!, incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0, long: 0, imageUrls: [], audioUrl: ''), denuncianteData: DenuncianteData(ci: 1, fullName: '', phone: 1, lat: 0, long: 0)),
       PerfilSupervisor(user: user!),
     ];
   }

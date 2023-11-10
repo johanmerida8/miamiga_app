@@ -2,10 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:miamiga_app/components/headers.dart';
-import 'package:miamiga_app/components/listview.dart';
+import 'package:miamiga_app/index/indexes.dart';
 import 'package:miamiga_app/model/datos_denunciante.dart';
 import 'package:miamiga_app/model/datos_incidente.dart';
-import 'package:miamiga_app/pages/detalles_denunciante.dart';
 
 class ReadCases extends StatefulWidget {
   final User? user;
@@ -25,9 +24,18 @@ class ReadCases extends StatefulWidget {
 
 class _ReadCasesState extends State<ReadCases> {
 
-  Future<List<DenuncianteData>> fetchCases() async {
+  Future<List<DenuncianteData>> _fetchCases() async {
+
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return [];
+    }
+
     final QuerySnapshot casesSnapshot = 
-      await FirebaseFirestore.instance.collection('cases').get();
+      await FirebaseFirestore.instance.collection('cases')
+      .where('supervisor', isEqualTo: widget.user!.uid)
+      .get();
 
 
       final List<DenuncianteData> casesData = casesSnapshot.docs
@@ -57,6 +65,14 @@ class _ReadCasesState extends State<ReadCases> {
         return casesData;
       }
 
+    @override
+    void initState() {
+      super.initState();
+      _fetchCases();
+    }
+
+      
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,12 +80,15 @@ class _ReadCasesState extends State<ReadCases> {
         //i want the appbar to be with no color
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Header(
-          header: 'Casos',
+        title: const Padding(
+          padding: EdgeInsets.only(right: 80.0),
+          child: Header(
+            header: 'Casos',
+          ),
         ),
       ),
       body: FutureBuilder(
-        future: fetchCases(), 
+        future: _fetchCases(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -78,37 +97,55 @@ class _ReadCasesState extends State<ReadCases> {
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('No hay casos'));
           } else {
-            return SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 15.0),
-                child: SizedBox(
-                  child: MyListView(
-                    items: snapshot.data!.map((caseData) {
-                      return Column(
+            return ListView.builder(
+              itemCount: snapshot.data?.length,
+              itemBuilder: (context, index) {
+                final caseData = snapshot.data?[index];
+                return GestureDetector(
+                  onTap: () {
+                    // Navigator.pushNamed(context, '/detalle_denuncia');
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => DetalleDenuncia(
+                          user: widget.user,
+                          incidentData: widget.incidentData,
+                          denuncianteData: widget.denuncianteData,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    color: const Color.fromRGBO(248, 181, 149, 1), // Set your desired background color
+                    margin: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(caseData.fullName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          Text('CI: ${caseData.ci}', style: const TextStyle(fontSize: 14)),
-                        ],
-                      );
-                    }).toList(),
-                    onItemClick: (int index) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => DetalleDenuncia(
-                            user: widget.user,
-                            incidentData: widget.incidentData,
-                            denuncianteData: widget.denuncianteData,
+                          Text(
+                            caseData!.fullName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white, // Set text color
+                            ),
                           ),
-                        ),
-                      );
-                    }
+                          Text(
+                            'CI: ${caseData.ci}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.white, // Set text color
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           }
-        }
+        },
       ),
     );
   }

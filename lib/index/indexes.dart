@@ -1,0 +1,10 @@
+export 'package:miamiga_app/pages/inicio_o_registrar.dart';
+export 'package:miamiga_app/pages/ventanas_usuario.dart';
+export 'package:miamiga_app/pages/ventanas_supervisor.dart';
+export 'package:miamiga_app/pages/splash_screen.dart';
+export 'package:miamiga_app/pages/evidencia.dart';
+export 'package:miamiga_app/pages/detalles.dart';
+export 'package:miamiga_app/pages/perfil_supervisor.dart';
+export 'package:miamiga_app/model/datos_denunciante.dart';
+export 'package:miamiga_app/model/datos_incidente.dart';
+export 'package:miamiga_app/pages/detalles_denunciante.dart';

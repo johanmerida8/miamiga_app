@@ -72,7 +72,7 @@ class _InicioScreenState extends State<InicioScreen> {
       );
     }
 
-    void alert() async {
+    /* void alert() async {
     showDialog(
       context: context,
       builder: (context) {
@@ -105,7 +105,7 @@ class _InicioScreenState extends State<InicioScreen> {
         );
       },
     );
-  }
+  } */
 
   @override
   void dispose() {
@@ -142,7 +142,7 @@ class _InicioScreenState extends State<InicioScreen> {
                           const SizedBox(height: 100),
                           ImportantButton(
                             text: 'DENUNCIAR',
-                            onTap: alert,
+                            onTap: denunciarScreen,
                             icon: Icons.warning_rounded,
                           ),
                         ],
