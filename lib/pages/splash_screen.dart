@@ -5,12 +5,8 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:miamiga_app/pages/auth_page.dart';
 // ignore: unused_import
 import 'package:miamiga_app/pages/inicio.dart';
-import 'package:miamiga_app/pages/inicio_o_registrar.dart';
-import 'package:miamiga_app/pages/ventanas_usuario.dart';
-import 'package:miamiga_app/services/logged_in.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,8 +30,9 @@ class _SplashScreenState extends State<SplashScreen>
         setState(() {
           isLoading = false;
         });
-        Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const AuthPage()));
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(context, '/auth');
+        });
       }
     });
   }

@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart';
 import 'package:miamiga_app/components/headers.dart';
@@ -179,9 +180,9 @@ class _EditPerfilState extends State<EditPerfil> {
           'country': 'No se pudo obtener la ubicacion',
         };
       }
-    } catch (e) {
+    } on PlatformException catch (e) {
       // ignore: avoid_print
-      print('Error al obtener la ubicacion modificada: $e');
+      print('Error obteniendo ubicacion: $e');
       return {
         'street': 'No se pudo obtener la ubicacion',
         'locality': 'No se pudo obtener la ubicacion',
@@ -346,37 +347,45 @@ class _EditPerfilState extends State<EditPerfil> {
                         const SizedBox(height: 25),
 
                         MyImportantBtn(
-                          onTap: () async{
-                            _updateData(
-                              widget.user!.uid, 
-                              fullnameController.text,  
-                              int.parse(phoneController.text),
-                              double.parse(latController.text),
-                              double.parse(longController.text),
-                            );
+                          onTap: () async {
+                            try {
+                              double lat = double.parse(latController.text);
+                              double long = double.parse(longController.text);
 
-                            if (changesMade) {
-                              showDialog(
-                                context: context, 
-                                barrierDismissible: false,
-                                builder: (BuildContext context) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
+                              _updateData(
+                                widget.user!.uid, 
+                                fullnameController.text,  
+                                int.parse(phoneController.text),
+                                lat,
+                                long,
                               );
-                            }
 
-                            await _updateData(
-                              widget.user!.uid, 
-                              fullnameController.text,  
-                              int.parse(phoneController.text),
-                              double.parse(latController.text),
-                              double.parse(longController.text),
-                            );
-                            if (changesMade) {
-                              //si se realizaron cambios cerramos el dialogo
-                              Navigator.of(context).pop();
+                              if (changesMade) {
+                                showDialog(
+                                  context: context, 
+                                  barrierDismissible: false,
+                                  builder: (BuildContext context) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  }
+                                );
+                              }
+
+                              await _updateData(
+                                widget.user!.uid, 
+                                fullnameController.text,  
+                                int.parse(phoneController.text),
+                                lat,
+                                long,
+                              );
+                              if (changesMade) {
+                                //si se realizaron cambios cerramos el dialogo
+                                Navigator.of(context).pop();
+                              }
+                            } catch (e) {
+                              print('Error parsing double: $e');
+                              // Handle the error, e.g. by showing an error message to the user
                             }
                           }, 
                           text: 'Actualizar'
