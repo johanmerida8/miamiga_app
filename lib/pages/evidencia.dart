@@ -205,128 +205,24 @@ class _CasePageState extends State<CasePage> {
     }
   }
 
-  // void cargarAudio() async {
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AudioModal(
-  //         pickedAudios: pickedAudios,
-  //         onAudiosSelected: () async {
-  //           FilePickerResult? result = await FilePicker.platform.pickFiles(
-  //             type: FileType.audio,
-  //           );
-
-  //           List<File> newAudios = [];
-  //           if (result != null) {
-  //             newAudios.add(File(result.files.first.path!));
-  //           }
-  //           pickAudio();
-  //           return newAudios;
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
   void cargarAudio() async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          content: SizedBox(
-            width: 300, // Adjust the width as needed
-            height: 300, // Adjust the height as needed
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Text(
-                      'Seleccionar Audio',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  if (selectedAudioPath != null)
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        'Titulo del Audio: $audioTitle',
-                        style: const TextStyle(
-                          fontSize: 18.0,
-                        ),
-                      ),
-                    ),
-                  if (selectedAudioPath != null)
-                    Column(
-                      children: [
-                        Slider(
-                          value: sliderValue,
-                          min: 0.0,
-                          max: duration.inSeconds.toDouble(),
-                          onChanged: (value) {
-                            setState(() {
-                              sliderValue = value;
-                              audioPlayer
-                                  .seek(Duration(seconds: value.toInt()));
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  if (selectedAudioPath != null)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        IconButton(
-                          icon:
-                              Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                          iconSize: 50.0,
-                          onPressed: () {
-                            if (isPlaying) {
-                              audioPlayer.pause();
-                            } else {
-                              audioPlayer.resume();
-                            }
-                            setState(() {
-                              isPlaying = !isPlaying;
-                            });
-                          },
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            audioPlayer.stop();
-                            setState(() {
-                              isPlaying = false;
-                              sliderValue = 0.0;
-                            });
-                          },
-                          icon: const Icon(Icons.stop),
-                        ),
-                      ],
-                    ),
-                  SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: ElevatedButton.icon(
-                        onPressed: pickAudio,
-                        icon: const Icon(
-                          Icons.music_note,
-                          size: 50,
-                        ),
-                        label: const SizedBox.shrink(),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(0),
-                          backgroundColor:
-                              const Color.fromRGBO(248, 181, 149, 1),
-                        ),
-                      )),
-                ],
-              ),
-            ),
-          ),
+        return AudioModal(
+          pickedAudios: pickedAudios,
+          onAudiosSelected: () async {
+            FilePickerResult? result = await FilePicker.platform.pickFiles(
+              type: FileType.audio,
+            );
+
+            List<File> newAudios = [];
+            if (result != null) {
+              newAudios.add(File(result.files.first.path!));
+            }
+            // pickAudio();
+            return newAudios;
+          },
         );
       },
     );
@@ -375,6 +271,14 @@ class _CasePageState extends State<CasePage> {
     }
   }
 
+  String audioPath = "";
+  void _printAudioPaths() {
+    for (File audioFile in pickedAudios) {
+      audioPath = audioFile.path;
+      print('Audio Path_______: $audioPath');
+    }
+  }
+
   void createEvidence() async {
     showDialog(
         context: context,
@@ -383,20 +287,12 @@ class _CasePageState extends State<CasePage> {
             child: CircularProgressIndicator(),
           );
         });
-
+    _printAudioPaths();
     try {
-      print('iamgen_____________$pickedImages');
-      print('documento_____________$pickedDocument');
-      print('audio_____________$pickedAudios');
-      print('audioseelct_____________$selectedAudioPath');
-      print('description_____________$desController');
-      print('date_____________$date');
-      print('late_____________$lat');
-      print('long_____________$long');
       if (pickedImages.isEmpty ||
           pickedDocument.isEmpty ||
-          // pickedAudios == null ||
-          selectedAudioPath == null ||
+          audioPath == "" ||
+          // selectedAudioPath == null ||
           desController.text.trim().isEmpty ||
           date == null ||
           lat == 0.0 ||
@@ -412,8 +308,8 @@ class _CasePageState extends State<CasePage> {
           lat: lat,
           long: long,
           imageUrls: pickedImages.map((e) => e.path).toList(),
-          audioUrl: selectedAudioPath!,
-          // audioUrl: pickedAudios.map((audio) => audio.path).toList().toString(),
+          // audioUrl: selectedAudioPath!,
+          audioUrl: audioPath,
           documentUrl: pickedDocument.first.path,
         ),
       );

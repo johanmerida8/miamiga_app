@@ -16,6 +16,8 @@ class AudioModal extends StatefulWidget {
 class _AudioModalState extends State<AudioModal> {
   final AudioPlayer audioPlayer = AudioPlayer();
   bool isPlaying = false;
+  double sliderValue = 0.0;
+  Duration duration = Duration();
 
   @override
   void dispose() {
@@ -33,7 +35,7 @@ class _AudioModalState extends State<AudioModal> {
       content: SingleChildScrollView(
         child: SizedBox(
           width: 300,
-          height: 300,
+          height: 400,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -52,7 +54,7 @@ class _AudioModalState extends State<AudioModal> {
                   children: [
                     Text(
                       'Nombre del Audio: $audioFileName',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -74,15 +76,28 @@ class _AudioModalState extends State<AudioModal> {
                           },
                         ),
                         IconButton(
-                          icon: Icon(Icons.stop),
+                          icon: const Icon(Icons.stop),
                           onPressed: () {
                             audioPlayer.stop();
                             setState(() {
                               isPlaying = false;
+                              sliderValue =
+                                  0.0; // Reiniciar el valor del Slider al detener el audio
                             });
                           },
                         ),
                       ],
+                    ),
+                    Slider(
+                      value: sliderValue,
+                      min: 0.0,
+                      max: duration.inSeconds.toDouble(),
+                      onChanged: (value) {
+                        setState(() {
+                          sliderValue = value;
+                          audioPlayer.seek(Duration(seconds: value.toInt()));
+                        });
+                      },
                     ),
                   ],
                 ),
