@@ -1,10 +1,11 @@
-// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously
+// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously, avoid_print, duplicate_ignore
 
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,9 +14,12 @@ import 'package:miamiga_app/components/limit_characters.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/row_button.dart';
+import 'package:miamiga_app/model/datos_evidencia.dart';
+import 'package:miamiga_app/pages/audio_modal.dart';
+import 'package:miamiga_app/pages/document_modal.dart';
+import 'package:miamiga_app/pages/image_modal.dart';
 import 'package:miamiga_app/pages/map.dart';
-import 'package:miamiga_app/pages/supervisor.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:path/path.dart' as Path;
 
 class CasePage extends StatefulWidget {
   final String item;
@@ -33,6 +37,8 @@ class _CasePageState extends State<CasePage> {
   final longController = TextEditingController();
 
   List<XFile> pickedImages = [];
+  List<File> pickedDocument = [];
+  List<File> pickedAudios = [];
   String? selectedAudioPath;
   final audioPlayer = AudioPlayer();
   bool isPlaying = false;
@@ -42,11 +48,50 @@ class _CasePageState extends State<CasePage> {
 
   String audioTitle = '';
 
-  List<File> pickedFiles = [];
   bool isDocumentReceived = false;
-
   bool isImageReceived = false;
   bool isMediaReceived = false;
+
+  Future<List<String>> uploadImageFile(List<File> files) async {
+    List<String> downloadUrls = [];
+    for (File file in files) {
+      String fileName = Path.basename(file.path);
+      Reference ref =
+          FirebaseStorage.instance.ref().child('EvidenceImages/$fileName');
+      UploadTask uploadTask = ref.putFile(file);
+      TaskSnapshot taskSnapshot = await uploadTask;
+      final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+      downloadUrls.add(downloadUrl);
+    }
+    return downloadUrls;
+  }
+
+  Future<String> uploadAudioFile(File file) async {
+    String fileName = Path.basename(file.path);
+    Reference ref =
+        FirebaseStorage.instance.ref().child('EvidenceAudios/$fileName');
+    UploadTask uploadTask = ref.putFile(file);
+    TaskSnapshot taskSnapshot = await uploadTask;
+    final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+    return downloadUrl;
+  }
+
+  Future<String> uploadDocumentFiles(File file) async {
+    String fileName = Path.basename(file.path);
+    String extension = Path.extension(file.path).toLowerCase();
+
+    if (extension == '.pdf' || extension == '.doc' || extension == '.docx') {
+      Reference ref =
+          FirebaseStorage.instance.ref().child('EvidenceDocuments/$fileName');
+      UploadTask uploadTask = ref.putFile(file);
+      TaskSnapshot taskSnapshot = await uploadTask;
+      final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } else {
+      throw Exception(
+          'Tipo archivo invalido. Por favor seleccione un archivo PDF, DOC o DOCX.');
+    }
+  }
 
   Future selectImageFile() async {
     final result = await ImagePicker().pickMultiImage(
@@ -68,83 +113,22 @@ class _CasePageState extends State<CasePage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          content: SizedBox(
-            width: 300, // Adjust the width as needed
-            height: 300, // Adjust the height as needed
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Padding(
-                  padding: EdgeInsets.all(24.0),
-                  child: Text(
-                    'Seleccionar Imagen',
-                    style: TextStyle(
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    itemCount: pickedImages.length,
-                    itemBuilder: (context, index) {
-                      final image = pickedImages[index];
-                      return GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                content: SizedBox(
-                                  child: Image.file(
-                                    File(image.path),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        child: Image.file(
-                          File(image.path),
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                if (pickedImages.isEmpty)
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: ElevatedButton.icon(
-                      onPressed: selectImageFile,
-                      icon: const Icon(
-                        Icons.add_a_photo,
-                        size: 50,
-                      ),
-                      label: const SizedBox.shrink(),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(0),
-                        backgroundColor: const Color.fromRGBO(248, 181, 149, 1),
-                      ),
-                    ),
-                  ),
-                if (pickedImages.isNotEmpty)
-                  ElevatedButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(
-                          const Color.fromRGBO(248, 181, 149, 1)),
-                    ),
-                    onPressed: () {
-                      selectImageFile();
-                    },
-                    child: const Text('Agregar otra imagen'),
-                  )
-              ],
-            ),
-          ),
+        return ImageModal(
+          pickedImages: pickedImages,
+          onImagesSelected: () async {
+            final result = await ImagePicker().pickMultiImage(
+              maxWidth: double.infinity,
+              maxHeight: double.infinity,
+              imageQuality: 80,
+            );
+
+            List<XFile> newImages = [];
+            if (result != null) {
+              newImages.addAll(result);
+            }
+
+            return newImages;
+          },
         );
       },
     );
@@ -158,7 +142,7 @@ class _CasePageState extends State<CasePage> {
 
     if (result != null) {
       setState(() {
-        pickedFiles.add(File(result.files.single.path!));
+        pickedDocument.add(File(result.files.single.path!));
         isDocumentReceived = true;
       });
     }
@@ -166,82 +150,26 @@ class _CasePageState extends State<CasePage> {
 
   void cargarDocumento() async {
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            content: SizedBox(
-              width: 300,
-              height: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Text(
-                      'Seleccionar Documento',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: PageView.builder(
-                        itemCount: pickedFiles.length,
-                        itemBuilder: (context, index) {
-                          final file = pickedFiles[index];
-                          return GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    content: SizedBox(
-                                      child: Text(
-                                        'Documento: ${file.path}',
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                            child: Text(
-                              'Documento: ${file.path}',
-                            ),
-                          );
-                        }),
-                  ),
-                  if (pickedFiles.isEmpty)
-                    SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: ElevatedButton.icon(
-                        onPressed: selectDocumentFile,
-                        icon: const Icon(
-                          Icons.file_copy,
-                          size: 50,
-                        ),
-                        label: const SizedBox.shrink(),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(0),
-                          backgroundColor:
-                              const Color.fromRGBO(248, 181, 149, 1),
-                        ),
-                      ),
-                    ),
-                  if (pickedFiles.isNotEmpty)
-                    ElevatedButton(
-                      style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(
-                              const Color.fromRGBO(248, 181, 149, 1))),
-                      onPressed: selectDocumentFile,
-                      child: const Text('Agregar otro documento'),
-                    )
-                ],
-              ),
-            ),
-          );
-        });
+      context: context,
+      builder: (BuildContext context) {
+        return DocumentModal(
+          pickedDocuments: pickedDocument,
+          onDocumentsSelected: () async {
+            final result = await FilePicker.platform.pickFiles(
+              type: FileType.custom,
+              allowedExtensions: ['pdf', 'doc', 'docx'],
+            );
+
+            List<File> newDocuments = [];
+            if (result != null) {
+              newDocuments.add(File(result.files.single.path!));
+            }
+
+            return newDocuments;
+          },
+        );
+      },
+    );
   }
 
   Future<void> pickAudio() async {
@@ -254,8 +182,7 @@ class _CasePageState extends State<CasePage> {
       selectedAudioPath = file.path;
 
       audioTitle = file.name;
-
-      print('audioRuta______$selectedAudioPath');
+      print('audiopickaudio________$selectedAudioPath');
 
       // Intenta cargar y reproducir el audio
       try {
@@ -278,6 +205,28 @@ class _CasePageState extends State<CasePage> {
     }
   }
 
+  // void cargarAudio() async {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AudioModal(
+  //         pickedAudios: pickedAudios,
+  //         onAudiosSelected: () async {
+  //           FilePickerResult? result = await FilePicker.platform.pickFiles(
+  //             type: FileType.audio,
+  //           );
+
+  //           List<File> newAudios = [];
+  //           if (result != null) {
+  //             newAudios.add(File(result.files.first.path!));
+  //           }
+  //           pickAudio();
+  //           return newAudios;
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
   void cargarAudio() async {
     showDialog(
       context: context,
@@ -436,20 +385,37 @@ class _CasePageState extends State<CasePage> {
         });
 
     try {
-      if (areFieldsEmpty()) {
-        Navigator.pop(context);
+      print('iamgen_____________$pickedImages');
+      print('documento_____________$pickedDocument');
+      print('audio_____________$pickedAudios');
+      print('audioseelct_____________$selectedAudioPath');
+      print('description_____________$desController');
+      print('date_____________$date');
+      print('late_____________$lat');
+      print('long_____________$long');
+      if (pickedImages.isEmpty ||
+          pickedDocument.isEmpty ||
+          // pickedAudios == null ||
+          selectedAudioPath == null ||
+          desController.text.trim().isEmpty ||
+          date == null ||
+          lat == 0.0 ||
+          long == 0.0) {
         showErrorMsg('Por favor llene todos los campos');
         return;
       }
 
       await createUserDocument(
-        pickedImages[0].path,
-        selectedAudioPath!,
-        pickedFiles[0].path,
-        desController.text.trim(),
-        date,
-        double.parse(latController.text.trim()),
-        double.parse(longController.text.trim()),
+        EvidenceData(
+          description: desController.text.trim(),
+          date: date,
+          lat: lat,
+          long: long,
+          imageUrls: pickedImages.map((e) => e.path).toList(),
+          audioUrl: selectedAudioPath!,
+          // audioUrl: pickedAudios.map((audio) => audio.path).toList().toString(),
+          documentUrl: pickedDocument.first.path,
+        ),
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -461,45 +427,37 @@ class _CasePageState extends State<CasePage> {
     } catch (e) {
       // ignore: avoid_print
       print('Error al enviar el evidencia: $e');
-      Navigator.pop(context);
+      // Navigator.pop(context);
+    } finally {
+      Navigator.pop(context); // Cierra el diálogo de carga
     }
   }
 
-  Future<void> createUserDocument(
-      String imageUrl,
-      String audioUrl,
-      String document,
-      String descripcion,
-      DateTime fecha,
-      double lat,
-      double long) async {
+  Future<void> createUserDocument(EvidenceData evidenceData) async {
+    List<File> imageFiles = evidenceData.imageUrls.map((e) => File(e)).toList();
+    List<String> imageUrls = await uploadImageFile(imageFiles);
+    String audioUrl = await uploadAudioFile(File(evidenceData.audioUrl));
+    String documentUrl =
+        await uploadDocumentFiles(File(evidenceData.documentUrl));
+
     try {
-      await FirebaseFirestore.instance.collection('evidence').doc().set({
-        'imageUrl': imageUrl,
+      DocumentReference docRef =
+          FirebaseFirestore.instance.collection('evidence').doc();
+      await docRef.set({
+        'imageUrl': imageUrls,
         'audioUrl': audioUrl,
-        'document': document,
-        'descripcion': descripcion,
-        'fecha': fecha,
-        'lat': lat,
-        'long': long,
+        'document': documentUrl,
+        'descripcion': evidenceData.description,
+        'fecha': evidenceData.date,
+        'lat': evidenceData.lat,
+        'long': evidenceData.long,
       });
+      Navigator.pop(context);
+      print('Evidencia creada exitosamente! con el ID: ${docRef.id}');
     } catch (e) {
       // ignore: avoid_print
       print('Error al crear documento del usuario: $e');
-      Navigator.pop(context);
     }
-  }
-
-  bool areFieldsEmpty() {
-    return desController.text.trim().isEmpty ||
-        dateController.text.trim().isEmpty ||
-        latController.text.trim().isEmpty ||
-        longController.text.trim().isEmpty ||
-        !isImageReceived ||
-        !isMediaReceived ||
-        !isDocumentReceived ||
-        lat == 0.0 ||
-        long == 0.0;
   }
 
   void showErrorMsg(String errorMsg) {
@@ -516,13 +474,6 @@ class _CasePageState extends State<CasePage> {
 
   @override
   void dispose() {
-    audioPlayer.dispose();
-    pickedImages.clear();
-    pickedFiles.clear();
-    desController.dispose();
-    dateController.dispose();
-    latController.dispose();
-    longController.dispose();
     super.dispose();
   }
 

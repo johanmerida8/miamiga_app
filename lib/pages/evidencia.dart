@@ -15,6 +15,9 @@ import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/row_button.dart';
 import 'package:miamiga_app/model/datos_evidencia.dart';
+import 'package:miamiga_app/pages/audio_modal.dart';
+import 'package:miamiga_app/pages/document_modal.dart';
+import 'package:miamiga_app/pages/image_modal.dart';
 import 'package:miamiga_app/pages/map.dart';
 import 'package:path/path.dart' as Path;
 
@@ -35,6 +38,7 @@ class _CasePageState extends State<CasePage> {
 
   List<XFile> pickedImages = [];
   List<File> pickedDocument = [];
+  List<File> pickedAudios = [];
   String? selectedAudioPath;
   final audioPlayer = AudioPlayer();
   bool isPlaying = false;
@@ -109,83 +113,22 @@ class _CasePageState extends State<CasePage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          content: SizedBox(
-            width: 300, // Adjust the width as needed
-            height: 300, // Adjust the height as needed
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Padding(
-                  padding: EdgeInsets.all(24.0),
-                  child: Text(
-                    'Seleccionar Imagen',
-                    style: TextStyle(
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    itemCount: pickedImages.length,
-                    itemBuilder: (context, index) {
-                      final image = pickedImages[index];
-                      return GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                content: SizedBox(
-                                  child: Image.file(
-                                    File(image.path),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        child: Image.file(
-                          File(image.path),
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                if (pickedImages.isEmpty)
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: ElevatedButton.icon(
-                      onPressed: selectImageFile,
-                      icon: const Icon(
-                        Icons.add_a_photo,
-                        size: 50,
-                      ),
-                      label: const SizedBox.shrink(),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(0),
-                        backgroundColor: const Color.fromRGBO(248, 181, 149, 1),
-                      ),
-                    ),
-                  ),
-                if (pickedImages.isNotEmpty)
-                  ElevatedButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(
-                          const Color.fromRGBO(248, 181, 149, 1)),
-                    ),
-                    onPressed: () {
-                      selectImageFile();
-                    },
-                    child: const Text('Agregar otra imagen'),
-                  )
-              ],
-            ),
-          ),
+        return ImageModal(
+          pickedImages: pickedImages,
+          onImagesSelected: () async {
+            final result = await ImagePicker().pickMultiImage(
+              maxWidth: double.infinity,
+              maxHeight: double.infinity,
+              imageQuality: 80,
+            );
+
+            List<XFile> newImages = [];
+            if (result != null) {
+              newImages.addAll(result);
+            }
+
+            return newImages;
+          },
         );
       },
     );
@@ -207,82 +150,26 @@ class _CasePageState extends State<CasePage> {
 
   void cargarDocumento() async {
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            content: SizedBox(
-              width: 300,
-              height: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Text(
-                      'Seleccionar Documento',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: PageView.builder(
-                        itemCount: pickedDocument.length,
-                        itemBuilder: (context, index) {
-                          final file = pickedDocument[index];
-                          return GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    content: SizedBox(
-                                      child: Text(
-                                        'Documento: ${file.path}',
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                            child: Text(
-                              'Documento: ${file.path}',
-                            ),
-                          );
-                        }),
-                  ),
-                  if (pickedDocument.isEmpty)
-                    SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: ElevatedButton.icon(
-                        onPressed: selectDocumentFile,
-                        icon: const Icon(
-                          Icons.file_copy,
-                          size: 50,
-                        ),
-                        label: const SizedBox.shrink(),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(0),
-                          backgroundColor:
-                              const Color.fromRGBO(248, 181, 149, 1),
-                        ),
-                      ),
-                    ),
-                  if (pickedDocument.isNotEmpty)
-                    ElevatedButton(
-                      style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(
-                              const Color.fromRGBO(248, 181, 149, 1))),
-                      onPressed: selectDocumentFile,
-                      child: const Text('Agregar otro documento'),
-                    )
-                ],
-              ),
-            ),
-          );
-        });
+      context: context,
+      builder: (BuildContext context) {
+        return DocumentModal(
+          pickedDocuments: pickedDocument,
+          onDocumentsSelected: () async {
+            final result = await FilePicker.platform.pickFiles(
+              type: FileType.custom,
+              allowedExtensions: ['pdf', 'doc', 'docx'],
+            );
+
+            List<File> newDocuments = [];
+            if (result != null) {
+              newDocuments.add(File(result.files.single.path!));
+            }
+
+            return newDocuments;
+          },
+        );
+      },
+    );
   }
 
   Future<void> pickAudio() async {
@@ -295,8 +182,7 @@ class _CasePageState extends State<CasePage> {
       selectedAudioPath = file.path;
 
       audioTitle = file.name;
-
-      print('audioRuta______$selectedAudioPath');
+      print('audiopickaudio________$selectedAudioPath');
 
       // Intenta cargar y reproducir el audio
       try {
@@ -319,6 +205,28 @@ class _CasePageState extends State<CasePage> {
     }
   }
 
+  // void cargarAudio() async {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AudioModal(
+  //         pickedAudios: pickedAudios,
+  //         onAudiosSelected: () async {
+  //           FilePickerResult? result = await FilePicker.platform.pickFiles(
+  //             type: FileType.audio,
+  //           );
+
+  //           List<File> newAudios = [];
+  //           if (result != null) {
+  //             newAudios.add(File(result.files.first.path!));
+  //           }
+  //           pickAudio();
+  //           return newAudios;
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
   void cargarAudio() async {
     showDialog(
       context: context,
@@ -477,8 +385,17 @@ class _CasePageState extends State<CasePage> {
         });
 
     try {
+      print('iamgen_____________$pickedImages');
+      print('documento_____________$pickedDocument');
+      print('audio_____________$pickedAudios');
+      print('audioseelct_____________$selectedAudioPath');
+      print('description_____________$desController');
+      print('date_____________$date');
+      print('late_____________$lat');
+      print('long_____________$long');
       if (pickedImages.isEmpty ||
           pickedDocument.isEmpty ||
+          // pickedAudios == null ||
           selectedAudioPath == null ||
           desController.text.trim().isEmpty ||
           date == null ||
@@ -496,6 +413,7 @@ class _CasePageState extends State<CasePage> {
           long: long,
           imageUrls: pickedImages.map((e) => e.path).toList(),
           audioUrl: selectedAudioPath!,
+          // audioUrl: pickedAudios.map((audio) => audio.path).toList().toString(),
           documentUrl: pickedDocument.first.path,
         ),
       );
