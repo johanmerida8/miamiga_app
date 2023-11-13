@@ -35,15 +35,27 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   String? imageUrl;
 
+  // void signUserOut(BuildContext context) async {
+  //   await FirebaseAuth.instance.signOut();
+  //   await _googleSignIn.signOut();
+  //   // ignore: use_build_context_synchronously
+  //   Navigator.of(context).pushReplacement(
+  //     MaterialPageRoute(
+  //       builder: (context) => const LoginOrRegister(),
+  //     ),
+  //   );
+  // }
   void signUserOut(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     await _googleSignIn.signOut();
-    // ignore: use_build_context_synchronously
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const LoginOrRegister(),
-      ),
-    );
+
+    Future.delayed(Duration.zero, () {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const LoginOrRegister(),
+        ),
+      );
+    });
   }
 
   void editPersonalData() async {
@@ -66,6 +78,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
           .get();
       if (imageSnapshot.exists) {
         final imageUrl = imageSnapshot['imageUrl'];
+
         if (imageUrl != null) {
           final image = await NetworkHelper.loadImage(imageUrl);
           setState(() {
@@ -155,11 +168,15 @@ class _PerfilScreenState extends State<PerfilScreen> {
   Uint8List? _image;
 
   void selectedImageProfile() async {
-    Uint8List img = await pickImage(ImageSource.gallery);
-    setState(() {
-      _image = img;
-    });
-    showSaveDialog(context);
+    Uint8List? img = await pickImage(ImageSource.gallery);
+    if (img != null) {
+      setState(() {
+        _image = img;
+      });
+      showSaveDialog(context);
+    } else {
+      print('El usuario no seleccionó ninguna imagen');
+    }
   }
 
   void saveProfileImage() async {

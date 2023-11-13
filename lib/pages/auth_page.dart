@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-
 class AuthPage extends StatelessWidget {
   const AuthPage({super.key});
 
@@ -25,11 +24,13 @@ class AuthPage extends StatelessWidget {
                     final role = roleSnapshot.data;
                     if (role == 'Supervisor') {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        Navigator.pushReplacementNamed(context, '/screens_supervisor');
+                        Navigator.pushReplacementNamed(
+                            context, '/screens_supervisor');
                       });
                     } else {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        Navigator.pushReplacementNamed(context, '/screens_usuario');
+                        Navigator.pushReplacementNamed(
+                            context, '/screens_usuario');
                       });
                     }
                     return Container();
@@ -53,12 +54,11 @@ class AuthPage extends StatelessWidget {
   }
 }
 
-
 Future<String?> fetchUserRole(String userId) async {
-    final snapshot = 
+  final snapshot =
       await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    if (snapshot.exists) {
-      return snapshot.get('role') as String?;
-    }
-    return null;
+  if (snapshot.exists) {
+    return 'Usuario Normal'; //snapshot.get('role') as String?;
   }
+  return null;
+}
