@@ -1,4 +1,5 @@
 class DenuncianteData{
+  String? userId;
   String fullName;
   int ci;
   int phone;
@@ -6,6 +7,7 @@ class DenuncianteData{
   double long;
 
   DenuncianteData({
+    this.userId,
     required this.fullName,
     required this.ci,
     required this.phone,

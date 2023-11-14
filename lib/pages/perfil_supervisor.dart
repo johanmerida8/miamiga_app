@@ -14,7 +14,7 @@ import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/pages/editar_perfil_supervisor.dart';
 import 'package:miamiga_app/pages/inicio_o_registrar.dart';
 import 'package:miamiga_app/pages/network_helper.dart';
-import 'package:miamiga_app/resources/image_data.dart';
+import 'package:miamiga_app/resources/image_data_super.dart';
 import 'package:miamiga_app/utils/utils.dart';
 
 class PerfilSupervisor extends StatefulWidget {
@@ -190,7 +190,7 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
       if (_image != null && widget.user != null) {
         String userId = widget.user!.uid;
         String saveResult =
-            await StoreData().saveData(file: _image!, userId: userId);
+            await StoreDataSuper().saveData(file: _image!, userId: userId);
 
         if (saveResult == 'Se ocurrió un error') {
           print('Error al guardar la imagen en Firestore');
@@ -305,7 +305,9 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const Center(
-                            child: CircularProgressIndicator(),
+                            child: CircularProgressIndicator(
+                              color: Color.fromRGBO(255, 87, 110, 1),
+                            )
                           );
                         } else if (snapshot.hasError) {
                           return Text('Error: ${snapshot.error}');

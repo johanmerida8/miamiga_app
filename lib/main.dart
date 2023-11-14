@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
         '/detalle_denuncia':(context) => DetalleDenuncia(
           user: FirebaseAuth.instance.currentUser,
           incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0.0, long: 0.0, imageUrls: [], audioUrl: ''),
-          denuncianteData: DenuncianteData(fullName: '', ci: 0, phone: 0, lat: 0.0, long: 0.0),
+          denuncianteData: DenuncianteData(fullName: '', ci: 0, phone: 0, lat: 0.0, long: 0.0), future: Future(() => null),
         ),
       },
     );

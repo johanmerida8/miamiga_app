@@ -17,7 +17,11 @@ class AuthPage extends StatelessWidget {
                 future: fetchUserRole(snapshot.data!.uid),
                 builder: (context, roleSnapshot) {
                   if (roleSnapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color.fromRGBO(255, 87, 110, 1),
+                      )
+                    );
                   } else if (roleSnapshot.hasError) {
                     return Text('Error: ${roleSnapshot.error}');
                   } else {

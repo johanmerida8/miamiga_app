@@ -15,7 +15,6 @@ import 'package:miamiga_app/components/phoneKeyboard.dart';
 
 // ignore: unused_import
 import 'package:miamiga_app/pages/map.dart';
-import 'package:miamiga_app/pages/verificar_correo.dart';
 
 class RegistroPage extends StatefulWidget {
   final Function()? onTap;
@@ -51,7 +50,9 @@ class _RegistroPageState extends State<RegistroPage> {
     context: context,
     builder: (context) {
       return const Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(
+          color: Color.fromRGBO(255, 87, 110, 1),
+        )
       );
     },
   );
@@ -102,11 +103,11 @@ class _RegistroPageState extends State<RegistroPage> {
       }); */
 
       //Navigate to the verification screen
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const VerifyEmail(),
-        ),
-      );
+      // Navigator.of(context).pushReplacement(
+      //   MaterialPageRoute(
+      //     builder: (context) => const VerifyEmail(),
+      //   ),
+      // );
 
       
     } else {
