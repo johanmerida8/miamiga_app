@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 
@@ -5,8 +7,8 @@ class DocumentModal extends StatefulWidget {
   final List<File> pickedDocuments;
   final Future<List<File>> Function() onDocumentsSelected;
 
-  DocumentModal(
-      {required this.pickedDocuments, required this.onDocumentsSelected});
+  const DocumentModal(
+      {super.key, required this.pickedDocuments, required this.onDocumentsSelected});
 
   @override
   _DocumentModalState createState() => _DocumentModalState();
@@ -69,6 +71,7 @@ class _DocumentModalState extends State<DocumentModal> {
                         .onDocumentsSelected()
                         .then((List<File> newDocuments) {
                       setState(() {
+                        widget.pickedDocuments.clear();
                         widget.pickedDocuments.addAll(newDocuments);
                       });
                     });
@@ -93,11 +96,12 @@ class _DocumentModalState extends State<DocumentModal> {
                 onPressed: () {
                   widget.onDocumentsSelected().then((List<File> newDocuments) {
                     setState(() {
+                      widget.pickedDocuments.clear();
                       widget.pickedDocuments.addAll(newDocuments);
                     });
                   });
                 },
-                child: const Text('Agregar otro documento'),
+                child: const Text('Cambiar Documento'),
               )
           ],
         ),

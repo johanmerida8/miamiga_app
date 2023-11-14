@@ -224,7 +224,9 @@ class _EditPerfilState extends State<EditPerfil> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
-                      child: CircularProgressIndicator(),
+                    child: CircularProgressIndicator(
+                        color: Color.fromRGBO(255, 87, 110, 1),
+                      )
                     );
                   } else if (snapshot.hasError) {
                     return Text ('Error: ${snapshot.error}');
@@ -252,7 +254,11 @@ class _EditPerfilState extends State<EditPerfil> {
                           future: getUserModifiedLocation(),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const CircularProgressIndicator();
+                              return const Center(
+                              child: CircularProgressIndicator(
+                                  color: Color.fromRGBO(255, 87, 110, 1),
+                                )
+                              );
                             } else if (snapshot.hasError) {
                               return Text ('Error: ${snapshot.error}');
                             } else {

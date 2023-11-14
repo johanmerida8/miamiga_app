@@ -41,7 +41,9 @@ class _IniciarSesionState extends State<IniciarSesion> {
       context: context,
       builder: (context) {
         return const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: Color.fromRGBO(255, 87, 110, 1),
+          )
         );
       },
     );

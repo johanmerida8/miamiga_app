@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -7,7 +9,7 @@ class AudioModal extends StatefulWidget {
   final List<File> pickedAudios;
   final Future<List<File>> Function() onAudiosSelected;
 
-  AudioModal({required this.pickedAudios, required this.onAudiosSelected});
+  const AudioModal({super.key, required this.pickedAudios, required this.onAudiosSelected});
 
   @override
   _AudioModalState createState() => _AudioModalState();
@@ -17,7 +19,7 @@ class _AudioModalState extends State<AudioModal> {
   final AudioPlayer audioPlayer = AudioPlayer();
   bool isPlaying = false;
   double sliderValue = 0.0;
-  Duration duration = Duration();
+  Duration duration = const Duration();
 
   @override
   void dispose() {
@@ -101,32 +103,6 @@ class _AudioModalState extends State<AudioModal> {
                     ),
                   ],
                 ),
-              ],
-              SizedBox(
-                width: 100,
-                height: 100,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    widget.onAudiosSelected().then((List<File> newAudios) {
-                      setState(() {
-                        widget.pickedAudios.addAll(newAudios);
-                        isPlaying = false;
-                        audioPlayer.stop();
-                      });
-                    });
-                  },
-                  icon: const Icon(
-                    Icons.music_note,
-                    size: 50,
-                  ),
-                  label: const SizedBox.shrink(),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.all(0),
-                    backgroundColor: const Color.fromRGBO(248, 181, 149, 1),
-                  ),
-                ),
-              ),
-              if (widget.pickedAudios.isNotEmpty)
                 ElevatedButton(
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all(
@@ -135,14 +111,42 @@ class _AudioModalState extends State<AudioModal> {
                   onPressed: () {
                     widget.onAudiosSelected().then((List<File> newAudios) {
                       setState(() {
+                        widget.pickedAudios.clear();
                         widget.pickedAudios.addAll(newAudios);
                         isPlaying = false;
                         audioPlayer.stop();
                       });
                     });
                   },
-                  child: const Text('Agregar otro audio'),
+                  child: const Text('Cambiar audio'),
                 ),
+              ],
+              if (widget.pickedAudios.isEmpty) ... [
+                  SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      widget.onAudiosSelected().then((List<File> newAudios) {
+                        setState(() {
+                          widget.pickedAudios.addAll(newAudios);
+                          isPlaying = false;
+                          audioPlayer.stop();
+                        });
+                      });
+                    },
+                    icon: const Icon(
+                      Icons.music_note,
+                      size: 50,
+                    ),
+                    label: const SizedBox.shrink(),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(0),
+                      backgroundColor: const Color.fromRGBO(248, 181, 149, 1),
+                    ),
+                  ),
+                ),
+              ]
             ],
           ),
         ),
@@ -150,3 +154,4 @@ class _AudioModalState extends State<AudioModal> {
     );
   }
 }
+

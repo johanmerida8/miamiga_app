@@ -1,18 +1,21 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, unused_element, depend_on_referenced_packages
 
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:miamiga_app/components/headers.dart';
+import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
-import 'package:miamiga_app/model/datos_denunciante.dart';
-import 'package:miamiga_app/model/datos_incidente.dart';
+import 'package:miamiga_app/index/indexes.dart';
+import 'package:miamiga_app/model/datos_usuarios.dart';
+import 'package:path/path.dart' as path;
 
 class DetalleDenuncia extends StatefulWidget {
+  final Future future;
   final User? user;
   final IncidentData incidentData;
   final DenuncianteData denuncianteData;
@@ -23,6 +26,7 @@ class DetalleDenuncia extends StatefulWidget {
       required this.user,
       required this.incidentData,
       required this.denuncianteData,
+      required this.future,
     });
 
   @override
@@ -30,100 +34,95 @@ class DetalleDenuncia extends StatefulWidget {
 }
 
 class _DetalleDenunciaState extends State<DetalleDenuncia> {
+  List<String> imageUrls = [];
+  String audioUrl = '';
+  AudioPlayer audioPlayer = AudioPlayer();
 
   final descripcionController = TextEditingController();
   final fechaController = TextEditingController();
   final locationController = TextEditingController();
 
-
-  double lat = 0.0;
-  double long = 0.0;
-
   final CollectionReference _details = 
         FirebaseFirestore.instance.collection('cases');
 
-  Future<void> _fetchData() async {
-  try {
-    // Check if widget.user is not null before proceeding
-    if (widget.user != null) {
-      final supervisorSnapshot = await FirebaseFirestore.instance.collection('users').doc(widget.user!.uid).get();
+  Future<void> _fetchCasesAssignedToSupervisor() async {
+  final QuerySnapshot querySnapshot = await _details
+      .where('supervisor', isEqualTo: widget.user!.uid)
+      .get();
 
-      if (supervisorSnapshot.exists) {
-        final supervisorData = supervisorSnapshot.data() as Map<String, dynamic>;
-        final userRole = supervisorData['role'];
-        
-        // Check if the user has the role of "Supervisor"
-        if (userRole == "Supervisor") {
-          final supervisorFullName = supervisorData['fullname'];
-          print("Nombre completo del supervisor: $supervisorFullName");
+  if (querySnapshot.docs.isNotEmpty) {
+    print('Cases assigned to supervisor found');
+    for (final doc in querySnapshot.docs) {
+      await _fetchUserDataAndAddToFirestore(doc);  // Use await here
+    }
+  } else {
+    print('No cases assigned to supervisor found');
+  }
+}
 
-          // Query cases assigned to the supervisor
-          final querySnapshot = await _details.where('supervisor', isEqualTo: supervisorFullName).get();
-          print("Supervisor full name: $supervisorFullName");
-          print("Query snapshot: ${querySnapshot.docs}");
+Future<void> _fetchUserDataAndAddToFirestore(DocumentSnapshot doc) async {
+  final userId = doc['user'];  // Get the user ID from the 'user' field
 
+  if (userId != null) {
+    print('User ID found: $userId');
 
-          if (querySnapshot.docs.isNotEmpty) {
-            // There are cases assigned to the supervisor
-            final firstDocument = querySnapshot.docs.first;
-            final incidenteData = firstDocument['incidente'];
+    // Fetch user data
+    final DocumentSnapshot userSnapshot =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
-            if (incidenteData != null) {
-              final Map<String, dynamic> incidente = incidenteData as Map<String, dynamic>;
-              final descripcionIncidente = incidente['descripcionIncidente'] ?? '';
-              final fechaIncidente = incidente['fechaIncidente'] ?? '';
-              final latitude = incidente['lat'] ?? 0.0;
-              final longitude = incidente['long'] ?? 0.0;
-              final imageUrl = incidente['imageUrl'] ?? '';
-              final audioUrl = incidente['audioUrl'] ?? '';
-              final documentUrl = incidente['document'] ?? '';
+    if (userSnapshot.exists) {
+      print('Fetched user data: ${userSnapshot.data()}');
+      // Fetch user data including fullname
+      final fullname = userSnapshot['fullname'];
+      print('User fullname: $fullname');
 
-              setState(() {
-                descripcionController.text = descripcionIncidente;
-                fechaController.text = fechaIncidente;
-                locationController.text = latitude.toString();
-                locationController.text = latitude.toString();
-                imageUrl;
-                audioUrl;
-                documentUrl;
-              });
+      final descripcionIncidente = doc['incidente']['descripcionIncidente'];
+      final fechaIncidente = doc['incidente']['fechaIncidente'].toDate();
+      final latitude = doc['incidente']['lat'];
+      final longitude = doc['incidente']['long'];
+      final List<dynamic> imageUrls = doc['incidente']['imageUrl'];
+      final String audioUrl = doc['incidente']['audioUrl'];
 
-              lat = latitude;
-              long = longitude;
+      lat = latitude;
+      long = longitude;
 
-              final List<Placemark> placemarks = await placemarkFromCoordinates(
-                latitude, 
-                longitude
-              );
+      final location = await getUserLocation();
+      locationController.text = location;
 
-              if (placemarks.isNotEmpty) {
-                final Placemark placemark = placemarks[0];
-                final String street = placemark.thoroughfare ?? '';
-                final String locality = placemark.locality ?? '';
-                final String country = placemark.country ?? '';
+      final userData = UserData(
+        descripcionIncidente: descripcionIncidente, 
+        fechaIncidente: fechaIncidente, 
+        latitude: latitude, 
+        longitude: longitude, 
+        imageUrls: List<String>.from(imageUrls), 
+        audioUrl: audioUrl
+      );
 
-                final locationString = '$street, $locality, $country';
-                locationController.text = locationString; 
+      setState(() {
+        descripcionController.text = userData.descripcionIncidente;
+        fechaController.text = userData.fechaIncidente.toString();
+        this.imageUrls = userData.imageUrls;
+        this.audioUrl = userData.audioUrl;
+      });
 
-              } else {
-                locationController.text = 'No se pudo obtener la ubicación';
-              }
-            }
-          } else {
-            // Handle the case where no cases are assigned to the supervisor
-            print("No hay casos asignados al supervisor.");
-          }
-        } else {
-          print("El usuario no tiene el rol de Supervisor.");
-        }
-      } else {
-        print("No existe el documento del supervisor.");
-      }
+      // ... rest of your code
     } else {
-      print("El usuario es nulo.");
+      print('No user document found');
+    }
+  } else {
+    print('No user ID found');
+  }
+}
+
+Future<void> _fetchData() async {
+  try {
+    if (widget.user != null) {
+      _fetchCasesAssignedToSupervisor();
+    } else {
+      print('User is null');
     }
   } catch (e) {
-    print("Error en obtener datos: $e");
+    print('Error fetching data: $e');
   }
 }
 
@@ -134,24 +133,59 @@ void initState() {
   _fetchData();
 }
 
-  
+  double lat = 0.0;
+  double long = 0.0;
 
-  
+    Future<String> getUserLocation() async {
+    try {
+      final List<Placemark> placemarks = await placemarkFromCoordinates(
+        lat,
+        long,
+      );
+
+      if (placemarks.isNotEmpty) {
+        final Placemark placemark = placemarks[0];
+        final String street = placemark.thoroughfare ?? '';
+        final String locality = placemark.locality ?? '';
+        final String country = placemark.country ?? '';
+
+        final formattedAddress = '$street, $locality, $country';
+        return formattedAddress;
+      } else {
+        return 'No se pudo obtener la ubicación';
+      }
+    } catch (e) {
+      print('Error en obteniendo ubicacion del usuario: $e');
+      return 'No se pudo obtener la ubicación';
+    }
+  }
+
+  Future<void> updateLocation() async {
+    try {
+      final String location = await getUserLocation();
+      locationController.text = location;
+    } catch (e) {
+      print('Error actualizando ubicacion: $e');
+    }
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
-
+    String fileName = path.basenameWithoutExtension(audioUrl);
+    List<String> parts = fileName.split('-');
+    parts.removeAt(0); // Remove the first part (the UID)
+    String finalFileName = parts.join('-'); // Join the remaining parts back together
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Stack( // Wrap the content with a Stack
+          child: Stack(
             children: [
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-
-                  const SizedBox(height: 15),
-                  
-
+                  const SizedBox(height: 25),
                   Row(
                     children: [
                       const Header(
@@ -166,86 +200,99 @@ void initState() {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 15),
-
-                  // FutureBuilder(
-                  //   future: _fetchData(), 
-                  //   builder: (context, snapshot) {
-                  //     if (snapshot.connectionState == ConnectionState.waiting) {
-                  //       return const Center(
-                  //         child: CircularProgressIndicator(),
-                  //       );
-                  //     } else if (snapshot.hasError) {
-                  //       return Text('Error: ${snapshot.error}');  
-                  //     } else {
-                  //       if (mounted) {
-                  //         return Column(
-                  //           children: [
-                  //             CarouselSlider(
-                  //               options: CarouselOptions(height: 400.0),
-                  //               items: imageUrls.map((i) {
-                  //                 return Builder(
-                  //                   builder: (BuildContext context) {
-                  //                     return Container(
-                  //                       width: MediaQuery.of(context).size.width,
-                  //                       margin: EdgeInsets.symmetric(horizontal: 5.0),
-                  //                       decoration: BoxDecoration(color: Colors.amber),
-                  //                       child: Image.network(i, fit: BoxFit.cover),
-                  //                     );
-                  //                   },
-                  //                 );
-                  //               }).toList(),
-                  //             ),
-                  //             IconButton(
-                  //               onPressed: () {
-                  //                 // Code to play and pause the audio
-                  //                 AudioPlayer audioPlayer = AudioPlayer();
-                  //                 audioPlayer.play(audioUrl);
-                  //               }, 
-                  //               icon: const Icon(Icons.play_arrow_rounded),
-                  //             ),
-                  //             IconButton(
-                  //               onPressed: () {
-                  //                 // Code to open the document
-                  //               }, 
-                  //               icon: const Icon(Icons.picture_as_pdf_rounded),
-                  //             ),
-                  //             const SizedBox(height: 25),
-                  //             MyTextField(
-                  //               controller: descripcionController, 
-                  //               hintText: 'Descripción del Incidente', 
-                  //               text: 'Descripción del Incidente', 
-                  //               obscureText: false, 
-                  //               isEnabled: false, 
-                  //               isVisible: true,
-                  //             ),
-                  //             const SizedBox(height: 25),
-                  //             MyTextField(
-                  //               controller: fechaController, 
-                  //               hintText: 'Fecha del Incidente', 
-                  //               text: 'Fecha del Incidente', 
-                  //               obscureText: false, 
-                  //               isEnabled: false, 
-                  //               isVisible: true,
-                  //             ),
-                  //             const SizedBox(height: 25),
-                  //             MyTextField(
-                  //               controller: locationController, 
-                  //               hintText: 'Ubicación del Incidente', 
-                  //               text: 'Ubicación del Incidente', 
-                  //               obscureText: false, 
-                  //               isEnabled: false, 
-                  //               isVisible: true,
-                  //             ),
-                  //           ],
-                  //         );
-                  //       } else {
-                  //         return Container();
+                  CarouselSlider(
+                    options: CarouselOptions(height: 400.0),
+                    items: imageUrls.map((imageUrl) {
+                      return Builder(
+                        builder: (BuildContext context) {
+                          return Container(
+                            width: MediaQuery.of(context).size.width,
+                            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                            decoration: const BoxDecoration(
+                              color: Colors.amber
+                            ),
+                            child: Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        }
+                      );
+                    }).toList(), 
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Audio URL: $finalFileName',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.play_arrow),
+                        onPressed: () async {
+                          await audioPlayer.setUrl(audioUrl);
+                          await audioPlayer.play();
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.pause),
+                        onPressed: () async {
+                          await audioPlayer.pause();
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.stop),
+                        onPressed: () async {
+                          await audioPlayer.stop();
+                        },
+                      ),
+                    ],
+                  ),
+                  MyTextField(
+                    controller: descripcionController, 
+                    hintText: 'Descripción del incidente', 
+                    text: 'Descripción del incidente', 
+                    obscureText: false, 
+                    isEnabled: false, 
+                    isVisible: true
+                  ),
+                  const SizedBox(height: 10),
+                  MyTextField(
+                    controller: fechaController, 
+                    hintText: 'Fecha del incidente', 
+                    text: 'Fecha del incidente', 
+                    obscureText: false, 
+                    isEnabled: false, 
+                    isVisible: true
+                  ),
+                  const SizedBox(height: 10),
+                  MyTextField(
+                    controller: locationController, 
+                    hintText: 'Ubicación del incidente', 
+                    text: 'Ubicación del incidente', 
+                    obscureText: false, 
+                    isEnabled: false, 
+                    isVisible: true
+                  ),
+                  // const SizedBox(height: 15),
+                  // MyImportantBtn(
+                  //   onTap: () {
+                  //     print('Passing user: ${widget.user}');
+                  //     Navigator.of(context).pushNamed(
+                  //       '/evidence',
+                  //       arguments: {
+                  //         'user': widget.user
                   //       }
-                  //     }
-                  //   }
-                  // )
+                  //     );
+                  //   }, 
+                  //   text: 'Realizar denuncia'
+                  // ),
+                  const SizedBox(height: 25),
                 ],
               ),
             ],
