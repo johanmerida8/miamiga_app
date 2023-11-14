@@ -7,6 +7,7 @@ class MyTextField extends StatefulWidget {
   final bool obscureText;
   final bool isEnabled;
   final bool isVisible;
+  final ValueChanged<String>? onChanged;
 
   const MyTextField({
     Key? key,
@@ -16,6 +17,7 @@ class MyTextField extends StatefulWidget {
     required this.obscureText,
     required this.isEnabled,
     required this.isVisible,
+    this.onChanged,
   }) : super(key: key);
 
   @override
@@ -71,6 +73,7 @@ class _MyTextFieldState extends State<MyTextField> {
                 TextField(
                   controller: widget.controller,
                   obscureText: widget.obscureText && !isPasswordVisible,
+                  onChanged: widget.onChanged,
                   decoration: InputDecoration(
                     enabledBorder: const OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.white),

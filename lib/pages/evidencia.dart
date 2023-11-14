@@ -182,7 +182,6 @@ class _CasePageState extends State<CasePage> {
       selectedAudioPath = file.path;
 
       audioTitle = file.name;
-      print('audiopickaudio________$selectedAudioPath');
 
       // Intenta cargar y reproducir el audio
       try {
