@@ -30,7 +30,8 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
   final phoneController = TextEditingController();
   final latController = TextEditingController();
   final longController = TextEditingController();
-  bool controlVentana = false;
+
+  bool controlVentanRefres = false;
 
   final CollectionReference _registration =
       FirebaseFirestore.instance.collection('users');
@@ -44,10 +45,15 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
 
       //ver si los datos han sido modificados
       final DocumentSnapshot currentData = await userDocument.get();
-      print('get UserDocument_________$currentData');
+      print('current_______$currentData');
+      print('userId_________$userId');
+      print('fullName_________$fullName');
+      print('phone_________$phone');
+      print('lat_________$lat');
+      print('long_________________$long');
       final Map<String, dynamic> currentValues =
           currentData.data() as Map<String, dynamic>;
-      print('data currentValues_________$currentValues');
+      print('currentValues_________________$currentValues');
 
       if (currentValues['fullname'] == fullName &&
           currentValues['phone'] == phone &&
@@ -71,13 +77,8 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
           'lat': lat,
           'long': long,
         });
-        controlVentana = false;
+        controlVentanRefres = false;
         _fetchData();
-        /* final locationData = await getUserModifiedLocation();
-      final String calle = locationData['street'] ?? '';
-      final String localidad = locationData['locality'] ?? '';
-      final String pais = locationData['country'] ?? '';
-      locationController.text = '$calle, $localidad, $pais'; */
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -109,7 +110,7 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
   Future<void> _fetchData() async {
     try {
       // Check if widget.user is not null before proceeding
-      if (widget.user != null && controlVentana != true) {
+      if (widget.user != null && controlVentanRefres != true) {
         final DocumentSnapshot documentSnapshot =
             await _registration.doc(widget.user!.uid).get();
 
@@ -120,30 +121,25 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
           double latitude = documentSnapshot['lat'] as double;
           double longitude = documentSnapshot['long'] as double;
 
-          print('fullname___________$fullnameController');
-          print('phone___________$phoneController');
-          print('latitude____________$latitude');
-          print('longitude_____________$longitude');
-
           lat = latitude;
           long = longitude;
-/*
-          final List<Placemark> placemarks = await placemarkFromCoordinates(
-            latitude, 
-            longitude
-          );
 
-          if (placemarks.isNotEmpty) {
-            final Placemark placemark = placemarks[0];
-            final String street = placemark.thoroughfare ?? '';
-            final String locality = placemark.locality ?? '';
-            final String country = placemark.country ?? '';
+          // final List<Placemark> placemarks = await placemarkFromCoordinates(
+          //   latitude,
+          //   longitude
+          // );
 
-            final locationString = '$street, $locality, $country';
-            locationController.text = locationString;
-          } else {
-            locationController.text = 'No se pudo obtener la ubicación.';
-          } */
+          // if (placemarks.isNotEmpty) {
+          //   final Placemark placemark = placemarks[0];
+          //   final String street = placemark.thoroughfare ?? '';
+          //   final String locality = placemark.locality ?? '';
+          //   final String country = placemark.country ?? '';
+
+          //   final locationString = '$street, $locality, $country';
+          //   locationController.text = locationString;
+          // } else {
+          //   locationController.text = 'No se pudo obtener la ubicación.';
+          // }
         } else {
           // Handle the case where the document doesn't exist
           print("No existe el documento.");
@@ -204,15 +200,6 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
     }
   }
 
-  @override
-  void dispose() {
-    fullnameController.dispose();
-    phoneController.dispose();
-    latController.dispose();
-    longController.dispose();
-    super.dispose();
-  }
-
   // bool changesMade = false;
 
   @override
@@ -240,31 +227,6 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
                 ],
               ),
               FutureBuilder(
-<<<<<<< HEAD
-                future: _fetchData(), 
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                    child: CircularProgressIndicator(
-                        color: Color.fromRGBO(255, 87, 110, 1),
-                      )
-                    );
-                  } else if (snapshot.hasError) {
-                    return Text ('Error: ${snapshot.error}');
-                  } else {
-                    return Column(
-                      children: [
-                        const SizedBox(height: 25),
-                        MyTextField(
-                          controller: fullnameController,
-                          text: 'Nombre Completo',
-                          hintText: 'Nombre Completo',
-                          obscureText: false,
-                          isEnabled: true,
-                          isVisible: true,
-                        ),
-                        /* const SizedBox(height: 15),
-=======
                   future: _fetchData(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -286,14 +248,13 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
                             isVisible: true,
                           ),
                           /* const SizedBox(height: 15),
->>>>>>> origin/brayan-rama
-                        MyTextField(
-                          controller: locationController,
-                          hintText: 'Ubicación',
-                          obscureText: false,
-                          isEnabled: false,
-                          isVisible: true,
-                        ), */
+                          MyTextField(
+                            controller: locationController,
+                            hintText: 'Ubicación',
+                            obscureText: false,
+                            isEnabled: false,
+                            isVisible: true,
+                          ), */
                           FutureBuilder<Map<String, String>>(
                               future: getUserModifiedLocation(),
                               builder: (context, snapshot) {
@@ -346,7 +307,7 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
                                   const Color.fromRGBO(248, 181, 149, 1)),
                             ),
                             onPressed: () async {
-                              controlVentana = true;
+                              controlVentanRefres = true;
                               final selectedLocation =
                                   await Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -368,9 +329,10 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
                                 final pais = locationData['country'];
                                 latController.text = lat.toString();
                                 longController.text = long.toString();
-                                print('Lat?????????: ${latController.text}');
-                                print('Long????????: ${longController.text}');
-
+                                print(
+                                    'latController.text_________${latController.text}');
+                                print(
+                                    'longController.text_________________${longController.text}');
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Column(children: [
@@ -384,7 +346,7 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
                                 // changesMade = true;
                               }
                             },
-                            child: const Text('Seleccionar Ubicacion'),
+                            child: const Text('Seleccionar Ubicación'),
                           ),
                           const SizedBox(height: 15),
                           MyPhoneKeyboard(
@@ -400,30 +362,36 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
 
                           MyImportantBtn(
                               onTap: () async {
-                                // if (changesMade) {
-                                showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (BuildContext context) {
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
-                                    });
-                                // }
+                                try {
+                                  // if (changesMade) {
+                                  showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (BuildContext context) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      });
+                                  // }
 
-                                // if (changesMade) {
-                                await _updateData(
-                                  widget.user!.uid,
-                                  fullnameController.text,
-                                  int.parse(phoneController.text),
-                                  double.parse(lat.toString()),
-                                  double.parse(long.toString()),
-                                );
-                                //si se realizaron cambios cerramos el dialogo
-                                Navigator.of(context).pop();
-                                // }
+                                  // if (changesMade) {
+                                  await _updateData(
+                                    widget.user!.uid,
+                                    fullnameController.text,
+                                    int.parse(phoneController.text),
+                                    double.parse(lat.toString()),
+                                    double.parse(long.toString()),
+                                  );
+                                  //si se realizaron cambios cerramos el dialogo
+                                  Navigator.pushReplacementNamed(context, '/perfil_supervisor');
+                                  // }
+                                } catch (e) {
+                                  print('Error parsing double: $e');
+                                  // Handle the error, e.g. by showing an error message to the user
+                                }
                               },
-                              text: 'Actualizar'),
+                              text: 'Actualizar'
+                            ),
                         ],
                       );
                     }

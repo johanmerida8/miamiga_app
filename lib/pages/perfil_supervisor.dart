@@ -1,4 +1,4 @@
-// ignore_for_file: sort_child_properties_last
+// ignore_for_file: sort_child_properties_last, use_build_context_synchronously
 
 import 'dart:typed_data';
 
@@ -12,7 +12,6 @@ import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/pages/editar_perfil_supervisor.dart';
-import 'package:miamiga_app/pages/inicio_o_registrar.dart';
 import 'package:miamiga_app/pages/network_helper.dart';
 import 'package:miamiga_app/resources/image_data_super.dart';
 import 'package:miamiga_app/utils/utils.dart';
@@ -30,23 +29,19 @@ class PerfilSupervisor extends StatefulWidget {
 }
 
 class _PerfilSupervisorState extends State<PerfilSupervisor> {
+  final ciController = TextEditingController();
   final fullnameController = TextEditingController();
   final phoneController = TextEditingController();
   final locationController = TextEditingController();
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   String? imageUrl;
 
   void signUserOut(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
-    await _googleSignIn.signOut();
-    // ignore: use_build_context_synchronously
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const LoginOrRegister(),
-      ),
-    );
+    // await _googleSignIn.signOut();
+    Navigator.of(context).pushReplacementNamed('/inicio_o_registrar');
   }
 
   final CollectionReference _registration =
@@ -81,7 +76,9 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
 
         // Check if the document exists
         if (documentSnapshot.exists) {
+
           fullnameController.text = documentSnapshot['fullname'];
+          ciController.text = documentSnapshot['ci'].toString();
           phoneController.text = documentSnapshot['phone'].toString();
           double latitude = documentSnapshot['lat'] as double;
           double longitude = documentSnapshot['long'] as double;
@@ -168,10 +165,9 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
 
   void editPersonalData() async {
     //i want a navigator to go to the edit perfil page
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EditPerfilSupervisor(user: widget.user),
-      ),
+    Navigator.of(context).pushNamed(
+      '/editar_perfil_supervisor',
+      arguments: widget.user,
     );
   }
 
@@ -315,6 +311,15 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
                           return Column(
                             children: [
                               const SizedBox(height: 25),
+                              MyTextField(
+                                controller: ciController,
+                                text: 'Carnet de Identidad',
+                                hintText: 'Carnet de Identidad',
+                                obscureText: false,
+                                isEnabled: false,
+                                isVisible: true,
+                              ),
+                              const SizedBox(height: 15),
                               MyTextField(
                                 controller: fullnameController,
                                 text: 'Nombre Completo',

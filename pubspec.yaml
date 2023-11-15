@@ -60,6 +60,8 @@ dependencies:
   http: ^1.1.0
   carousel_slider: ^4.2.1
   path: ^1.8.3
+  provider: ^6.1.1
+  fluttertoast: ^8.2.4
  
   
 

@@ -3,12 +3,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart';
 import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
+import 'package:miamiga_app/components/phoneKeyboard.dart';
 import 'package:miamiga_app/pages/map.dart';
 
 class EditPerfil extends StatefulWidget {
@@ -26,6 +26,7 @@ class EditPerfil extends StatefulWidget {
 class _EditPerfilState extends State<EditPerfil> {
   late LocationData modifiedLocation;
 
+  // final ciController = TextEditingController();
   final fullnameController = TextEditingController();
   final phoneController = TextEditingController();
   final latController = TextEditingController();
@@ -37,13 +38,13 @@ class _EditPerfilState extends State<EditPerfil> {
       FirebaseFirestore.instance.collection('users');
 
   //update operation
-  Future<void> _updateData(String userId, String fullName, int phone,
+  Future<bool> _updateData(String userId, String fullName, int phone,
       double lat, double long) async {
     try {
       // Get a reference to the Firestore collection
       final DocumentReference userDocument = _registration.doc(userId);
 
-      //ver si los datos han sido modificados
+      // Check if the data has been modified
       final DocumentSnapshot currentData = await userDocument.get();
       print('current_______$currentData');
       print('userId_________$userId');
@@ -59,7 +60,7 @@ class _EditPerfilState extends State<EditPerfil> {
           currentValues['phone'] == phone &&
           currentValues['lat'] == lat &&
           currentValues['long'] == long) {
-        //no se han realizado cambios
+        // No changes were made
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('No se han realizado cambios.'),
@@ -67,10 +68,9 @@ class _EditPerfilState extends State<EditPerfil> {
             duration: Duration(seconds: 3),
           ),
         );
-        return;
+        return false; // No changes were made
       } else {
-        // changesMade = true;
-        // Update the document with the specified userId
+        // Changes were made, update the data
         await userDocument.update({
           'fullname': fullName,
           'phone': phone,
@@ -79,17 +79,18 @@ class _EditPerfilState extends State<EditPerfil> {
         });
         controlVentanRefres = false;
         _fetchData();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Datos actualizados exitosamente!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        print('Actualizado exitoso de datos!');
+        return true; // Changes were made
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Datos actualizados exitosamente!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
-      );
-
-      print('Actualizado exitoso de datos!');
     } catch (e) {
       print('Error actualizando datos: $e');
 
@@ -100,6 +101,7 @@ class _EditPerfilState extends State<EditPerfil> {
           duration: const Duration(seconds: 3),
         ),
       );
+      return false; // An error occurred
     }
   }
 
@@ -116,6 +118,7 @@ class _EditPerfilState extends State<EditPerfil> {
 
         // Check if the document exists
         if (documentSnapshot.exists) {
+          // ciController.text = documentSnapshot['ci'].toString();
           fullnameController.text = documentSnapshot['fullname'];
           phoneController.text = documentSnapshot['phone'].toString();
           double latitude = documentSnapshot['lat'] as double;
@@ -227,96 +230,13 @@ class _EditPerfilState extends State<EditPerfil> {
                 ],
               ),
               FutureBuilder(
-<<<<<<< HEAD
-                future: _fetchData(), 
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                    child: CircularProgressIndicator(
-                        color: Color.fromRGBO(255, 87, 110, 1),
-                      )
-                    );
-                  } else if (snapshot.hasError) {
-                    return Text ('Error: ${snapshot.error}');
-                  } else {
-                    return Column(
-                      children: [
-                        const SizedBox(height: 25),
-                        MyTextField(
-                          controller: fullnameController,
-                          text: 'Nombre Completo',
-                          hintText: 'Nombre Completo',
-                          obscureText: false,
-                          isEnabled: true,
-                          isVisible: true,
-                        ),
-                        /* const SizedBox(height: 15),
-                        MyTextField(
-                          controller: locationController,
-                          hintText: 'Ubicación',
-                          obscureText: false,
-                          isEnabled: false,
-                          isVisible: true,
-                        ), */
-                        FutureBuilder<Map<String, String>>(
-                          future: getUserModifiedLocation(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(
-                              child: CircularProgressIndicator(
-                                  color: Color.fromRGBO(255, 87, 110, 1),
-                                )
-                              );
-                            } else if (snapshot.hasError) {
-                              return Text ('Error: ${snapshot.error}');
-                            } else {
-                              final locationData = snapshot.data!;
-                              final calle = locationData['street'];
-                              final localidad = locationData['locality'];
-                              final pais = locationData['country'];
-                              return Column(
-                                children: [
-                                  /*hidden lat and long*/
-                                  const SizedBox(height: 10),
-                                  MyTextField(
-                                    controller: latController,
-                                    text: 'Latitud',
-                                    hintText: 'Latitud',
-                                    obscureText: false,
-                                    isEnabled: false,
-                                    isVisible: false,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  MyTextField(
-                                    controller: longController,
-                                    text: 'Longitud',
-                                    hintText: 'Longitud',
-                                    obscureText: false,
-                                    isEnabled: false,
-                                    isVisible: false,
-                                  ),
-                                  /*hidden lat and long*/
-                                  const SizedBox(height: 10),
-                                  Text('Calle: $calle'),
-                                  Text('Localidad: $localidad'),
-                                  Text('Pais: $pais'),
-                                ],
-                              );
-                            }
-                          }
-                        ),
-                        const SizedBox(height: 10),
-                        //seleccionar ubicacion
-
-                        ElevatedButton(
-                        style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all(const Color.fromRGBO(248, 181, 149, 1)),
-=======
                   future: _fetchData(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
-                        child: CircularProgressIndicator(),
+                        child: CircularProgressIndicator(
+                          color: Color.fromRGBO(255, 87, 110, 1),
+                        ),
                       );
                     } else if (snapshot.hasError) {
                       return Text('Error: ${snapshot.error}');
@@ -331,22 +251,15 @@ class _EditPerfilState extends State<EditPerfil> {
                             obscureText: false,
                             isEnabled: true,
                             isVisible: true,
->>>>>>> origin/brayan-rama
                           ),
-                          /* const SizedBox(height: 15),
-                          MyTextField(
-                            controller: locationController,
-                            hintText: 'Ubicación',
-                            obscureText: false,
-                            isEnabled: false,
-                            isVisible: true,
-                          ), */
                           FutureBuilder<Map<String, String>>(
                               future: getUserModifiedLocation(),
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
-                                  return const CircularProgressIndicator();
+                                  return const CircularProgressIndicator(
+                                    color: Color.fromRGBO(255, 87, 110, 1),
+                                  );
                                 } else if (snapshot.hasError) {
                                   return Text('Error: ${snapshot.error}');
                                 } else {
@@ -435,7 +348,7 @@ class _EditPerfilState extends State<EditPerfil> {
                             child: const Text('Seleccionar Ubicación'),
                           ),
                           const SizedBox(height: 15),
-                          MyTextField(
+                          MyPhoneKeyboard(
                             controller: phoneController,
                             text: 'Telefono',
                             hintText: 'Telefono',
@@ -447,36 +360,40 @@ class _EditPerfilState extends State<EditPerfil> {
                           const SizedBox(height: 25),
 
                           MyImportantBtn(
-                              onTap: () async {
-                                try {
-                                  // if (changesMade) {
-                                  showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (BuildContext context) {
-                                        return const Center(
-                                          child: CircularProgressIndicator(),
-                                        );
-                                      });
-                                  // }
+                            onTap: () async {
+                              try {
+                                // if (changesMade) {
+                                showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (BuildContext context) {
+                                      return const Center(
+                                        child: CircularProgressIndicator(
+                                          color: Color.fromRGBO(255, 87, 110, 1),
+                                        ),
+                                      );
+                                    });
+                                
+                                bool changesMade = await _updateData(
+                                  widget.user!.uid,
+                                  fullnameController.text,
+                                  int.parse(phoneController.text),
+                                  double.parse(lat.toString()),
+                                  double.parse(long.toString()),
+                                );
 
-                                  // if (changesMade) {
-                                  await _updateData(
-                                    widget.user!.uid,
-                                    fullnameController.text,
-                                    int.parse(phoneController.text),
-                                    double.parse(lat.toString()),
-                                    double.parse(long.toString()),
-                                  );
-                                  //si se realizaron cambios cerramos el dialogo
-                                  Navigator.of(context).pop();
-                                  // }
-                                } catch (e) {
-                                  print('Error parsing double: $e');
-                                  // Handle the error, e.g. by showing an error message to the user
+                                if (changesMade) {
+                                  Navigator.pushReplacementNamed(context, '/screens_usuario');
+                                } else {
+                                  Navigator.pop(context); // Close the progress dialog
                                 }
-                              },
-                              text: 'Actualizar'),
+                              } catch (e) {
+                                print('Error parsing double: $e');
+                                // Handle the error, e.g. by showing an error message to the user
+                              }
+                            },
+                            text: 'Actualizar'
+                          ),
                         ],
                       );
                     }

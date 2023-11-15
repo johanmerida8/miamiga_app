@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, unnecessary_this, unnecessary_null_comparison, avoid_print, duplicate_ignore, dead_code, unused_local_variable
+// ignore_for_file: use_build_context_synchronously, unnecessary_this, unnecessary_null_comparison, avoid_print, duplicate_ignore, dead_code, unused_local_variable, unused_element
 
 import 'dart:io';
 
@@ -17,7 +17,9 @@ import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/row_button.dart';
 import 'package:miamiga_app/model/datos_denunciante.dart';
 import 'package:miamiga_app/model/datos_incidente.dart';
+import 'package:miamiga_app/pages/audio_modal.dart';
 import 'package:miamiga_app/pages/denunciante.dart';
+import 'package:miamiga_app/pages/image_modal.dart';
 import 'package:miamiga_app/pages/map.dart';
 
 class DenunciaIncidente extends StatefulWidget {
@@ -38,7 +40,8 @@ class DenunciaIncidente extends StatefulWidget {
 
 class _DenunciaIncidenteState extends State<DenunciaIncidente> {
   List<XFile> pickedImages = [];
-  String? selectedAudioPath;
+  List<File> pickedAudios = [];
+  // String? selectedAudioPath;
   final audioPlayer = AudioPlayer();
   bool isPlaying = false;
   Duration duration = Duration.zero;
@@ -88,12 +91,12 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
     if (isImageReceived && pickedImages.isNotEmpty) {
       widget.incidentData.imageUrls = pickedImages.map((e) => e.path).toList();
     } else {
-      widget.incidentData.imageUrls = [];
+      widget.incidentData.imageUrls = pickedImages.map((e) => e.path).toList();
     }
-    if (isMediaReceived && selectedAudioPath != null) {
-      widget.incidentData.audioUrl = selectedAudioPath!;
+    if (isMediaReceived && pickedAudios != null && pickedAudios.isNotEmpty) {
+      widget.incidentData.audioUrl = pickedAudios.first.path;
     } else {
-      widget.incidentData.audioUrl = '';
+      widget.incidentData.audioUrl = audioPath;
     }
   }
 
@@ -104,16 +107,16 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
     print('Fecha: ${widget.incidentData.date}');
     print('Latitud: ${widget.incidentData.lat}');
     print('Longitud: ${widget.incidentData.long}');
-    print('URL de imagen: ${widget.incidentData.imageUrls}');
-    print('URL de audio: ${widget.incidentData.audioUrl}');
+    print('Picked Images: ${pickedImages.length}');
+    print('Audio Path: $audioPath');
 
     try {
-      if (this.widget.incidentData.description.isEmpty ||
+      if (this.widget.incidentData.description.trim().isEmpty ||
           this.widget.incidentData.date == null ||
           this.widget.incidentData.lat == 0.0 ||
           this.widget.incidentData.long == 0.0 ||
-          !isImageReceived ||
-          !isMediaReceived) {
+          pickedImages.isEmpty ||
+          audioPath.isEmpty) {
         showErrorMsg(
             context, 'Por favor, ingrese todos los datos del incidente');
       } else {
@@ -163,217 +166,91 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          content: SizedBox(
-            width: 300, // Adjust the width as needed
-            height: 300, // Adjust the height as needed
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Padding(
-                  padding: EdgeInsets.all(24.0),
-                  child: Text(
-                    'Seleccionar Imagen',
-                    style: TextStyle(
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    itemCount: pickedImages.length,
-                    itemBuilder: (context, index) {
-                      final image = pickedImages[index];
-                      return GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                content: SizedBox(
-                                  child: Image.file(
-                                    File(image.path),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        child: Image.file(
-                          File(image.path),
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                if (pickedImages.isEmpty)
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: ElevatedButton.icon(
-                      onPressed: selectImageFile,
-                      icon: const Icon(
-                        Icons.add_a_photo,
-                        size: 50,
-                      ),
-                      label: const SizedBox.shrink(),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(0),
-                        backgroundColor: const Color.fromRGBO(248, 181, 149, 1),
-                      ),
-                    ),
-                  ),
-                if (pickedImages.isNotEmpty)
-                  ElevatedButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(
-                          const Color.fromRGBO(248, 181, 149, 1)),
-                    ),
-                    onPressed: () {
-                      selectImageFile();
-                    },
-                    child: const Text('Agregar otra imagen'),
-                  )
-              ],
-            ),
-          ),
+        return ImageModal(
+          pickedImages: pickedImages,
+          onImagesSelected: () async {
+            final result = await ImagePicker().pickMultiImage(
+              maxWidth: double.infinity,
+              maxHeight: double.infinity,
+              imageQuality: 80,
+            );
+
+            List<XFile> newImages = [];
+            if (result != null) {
+              newImages.addAll(result);
+            }
+
+            return newImages;
+          },
         );
       },
     );
   }
 
-  Future<void> pickAudio() async {
-    print('pickAudio: selectedAudioPath: $selectedAudioPath');
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-    );
+  Future<List<File>> pickAudio() async {
+  print('pickAudio: selectedAudioPath: $pickedAudios');
+  FilePickerResult? result = await FilePicker.platform.pickFiles(
+    type: FileType.audio,
+  );
 
-    if (result != null) {
-      PlatformFile file = result.files.first;
-      selectedAudioPath = file.path;
+  if (result != null) {
+    PlatformFile file = result.files.first;
 
-      audioTitle = file.name;
+    File audioFile = File(file.path!);
 
-      await audioPlayer.setSourceUrl(selectedAudioPath!);
+    pickedAudios = [audioFile];
 
-      duration = (await audioPlayer.getDuration())!;
+    audioPath = file.path ?? '';
+    print('Audio Path After Setting: $audioPath');
 
-      setState(() {
-        isMediaReceived = true;
-      });
-    } else {
-      // User canceled the picker
-      selectedAudioPath = null;
+    audioTitle = file.name;
+
+    await audioPlayer.setSourceUrl(audioPath);
+
+    duration = (await audioPlayer.getDuration())!;
+
+    setState(() {
+      isMediaReceived = true;
+    });
+  } else {
+    // User canceled the picker
+    pickedAudios = [];
+    isMediaReceived = false;
+  }
+
+  return pickedAudios;
+}
+
+  String audioPath = "";
+  void _printAudioPaths() {
+    for (File audioFile in pickedAudios) {
+      audioPath = audioFile.path;
+      print('Audio Path_______: $audioPath');
     }
   }
 
-  void cargarAudio() async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content: SizedBox(
-            width: 300, // Adjust the width as needed
-            height: 300, // Adjust the height as needed
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Text(
-                      'Seleccionar Audio',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  if (selectedAudioPath != null)
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        'Titulo del Audio: $audioTitle',
-                        style: const TextStyle(
-                          fontSize: 18.0,
-                        ),
-                      ),
-                    ),
-                  if (selectedAudioPath != null)
-                    Column(
-                      children: [
-                        Slider(
-                          value: sliderValue,
-                          min: 0.0,
-                          max: duration.inSeconds.toDouble(),
-                          onChanged: (value) {
-                            setState(() {
-                              sliderValue = value;
-                              audioPlayer
-                                  .seek(Duration(seconds: value.toInt()));
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  if (selectedAudioPath != null)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        IconButton(
-                          icon:
-                              Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                          iconSize: 50.0,
-                          onPressed: () {
-                            if (isPlaying) {
-                              audioPlayer.pause();
-                            } else {
-                              audioPlayer.resume();
-                            }
-                            setState(() {
-                              isPlaying = !isPlaying;
-                            });
-                          },
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            audioPlayer.stop();
-                            setState(() {
-                              isPlaying = false;
-                              sliderValue = 0.0;
-                            });
-                          },
-                          icon: const Icon(Icons.stop),
-                        ),
-                      ],
-                    ),
-                  SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: ElevatedButton.icon(
-                        onPressed: pickAudio,
-                        icon: const Icon(
-                          Icons.music_note,
-                          size: 50,
-                        ),
-                        label: const SizedBox.shrink(),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(0),
-                          backgroundColor:
-                              const Color.fromRGBO(248, 181, 149, 1),
-                        ),
-                      )),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  Future<void> cargarAudio() async {
+  List<File> newAudios = await pickAudio();
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AudioModal(
+        pickedAudios: newAudios,
+        onAudiosSelected: () async {
+          FilePickerResult? result = await FilePicker.platform.pickFiles(
+            type: FileType.audio,
+          );
+
+          if (result != null) {
+            newAudios.add(File(result.files.first.path!));
+          }
+          return newAudios;
+        },
+      );
+    },
+  );
+}
 
   double lat = 0.0;
   double long = 0.0;
@@ -581,18 +458,9 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
                   FutureBuilder<Map<String, String>>(
                       future: getUserModifiedLocation(),
                       builder: (context, snapshot) {
-<<<<<<< HEAD
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              color: Color.fromRGBO(255, 87, 110, 1),
-                            )
-                          );
-=======
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const CircularProgressIndicator();
->>>>>>> origin/brayan-rama
                         } else if (snapshot.hasError) {
                           return Text('Error: ${snapshot.error}');
                         } else {

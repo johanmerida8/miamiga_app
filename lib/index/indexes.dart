@@ -8,3 +8,7 @@ export 'package:miamiga_app/pages/perfil_supervisor.dart';
 export 'package:miamiga_app/model/datos_denunciante.dart';
 export 'package:miamiga_app/model/datos_incidente.dart';
 export 'package:miamiga_app/pages/detalles_denunciante.dart';
+export 'package:miamiga_app/pages/completar_perfil.dart';
+export 'package:miamiga_app/pages/perfil.dart';
+export 'package:miamiga_app/pages/edit_perfil.dart';
+export 'package:miamiga_app/pages/editar_perfil_supervisor.dart';

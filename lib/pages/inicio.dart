@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:miamiga_app/components/important_button.dart';
 import 'package:miamiga_app/model/datos_denunciante.dart';
 import 'package:miamiga_app/model/datos_incidente.dart';
@@ -72,40 +73,7 @@ class _InicioScreenState extends State<InicioScreen> {
       );
     }
 
-    /* void alert() async {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Aviso Importante!'),
-          content: const Text('La cantidad de denuncias que puede realizar es 1 por semana para prevenir el abuso del sistema'),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => DenunciaIncidente(
-                      user: widget.user, 
-                      incidentData: widget.incidentData, 
-                      denuncianteData: widget.denunciaData,
-                    ), 
-                  ),
-                );
-              },
-              child: const Text(
-                'Entendido',
-                style: TextStyle(
-                  color: Color.fromRGBO(248, 181, 149, 1),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  } */
+    
 
   @override
   void dispose() {

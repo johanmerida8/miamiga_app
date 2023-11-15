@@ -8,8 +8,6 @@ import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/square_tile.dart';
 import 'package:miamiga_app/pages/restablecer_contrase%C3%B1a.dart';
-import 'package:miamiga_app/pages/ventanas_usuario.dart';
-import 'package:miamiga_app/pages/ventanas_supervisor.dart';
 import 'package:miamiga_app/services/auth_services.dart';
 
 class IniciarSesion extends StatefulWidget {
@@ -78,6 +76,11 @@ class _IniciarSesionState extends State<IniciarSesion> {
       Navigator.pop(context);
       //mostar mensaje de error
       showErrorMsg(e.code);
+    } catch (e) {
+      //quitar el dialogo de carga
+      Navigator.pop(context);
+      //mostar mensaje de error
+      showErrorMsg(e.toString());
     }
   }
 

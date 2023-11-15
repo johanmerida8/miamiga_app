@@ -324,8 +324,10 @@ class _CasePageState extends State<CasePage> {
     } catch (e) {
       // ignore: avoid_print
       print('Error al enviar el evidencia: $e');
+    } finally {
+      await Future.delayed(const Duration(seconds: 3));
       Navigator.pop(context);
-    }
+    } 
   }
 
   Future<void> createUserDocument(EvidenceData evidenceData) async {

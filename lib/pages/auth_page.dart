@@ -28,13 +28,11 @@ class AuthPage extends StatelessWidget {
                     final role = roleSnapshot.data;
                     if (role == 'Supervisor') {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        Navigator.pushReplacementNamed(
-                            context, '/screens_supervisor');
+                        Navigator.pushReplacementNamed(context, '/screens_supervisor');
                       });
                     } else {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        Navigator.pushReplacementNamed(
-                            context, '/screens_usuario');
+                        Navigator.pushReplacementNamed(context, '/screens_usuario');
                       });
                     }
                     return Container();
@@ -62,7 +60,7 @@ Future<String?> fetchUserRole(String userId) async {
   final snapshot =
       await FirebaseFirestore.instance.collection('users').doc(userId).get();
   if (snapshot.exists) {
-    return 'Usuario Normal'; //snapshot.get('role') as String?;
+    return snapshot.get('role') as String?;
   }
   return null;
 }

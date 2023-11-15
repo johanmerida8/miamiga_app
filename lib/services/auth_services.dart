@@ -1,7 +1,9 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:miamiga_app/pages/ventanas_usuario.dart';
 
 class AuthService {
 
@@ -25,16 +27,35 @@ class AuthService {
         idToken: gAuth.idToken,
       );
 
-      //finalmente, debemos iniciar sesion
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final User user = userCredential.user!;
 
-      //ir a la pantalla de inicio
-      // ignore: use_build_context_synchronously
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const Screens(),
-        ),
-      );
+      final DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+
+      if (userDoc.exists) {
+        final Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+        if (userData['fullname'] != null && userData['ci'] != null && userData['phone'] != null && userData['lat'] != null && userData['long'] != null) {
+          Navigator.of(context).pushReplacementNamed('/screens_usuario');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Por favor, completa tu perfil'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          Navigator.of(context).pushReplacementNamed('/completar_perfil');
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Por favor, completa tu perfil'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.of(context).pushReplacementNamed('/completar_perfil');
+      
+      }
     } catch (e) {
       // ignore: avoid_print
       print("Error de iniciar con google: $e");

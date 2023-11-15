@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, sort_child_properties_last, non_constant_identifier_names
+// ignore_for_file: avoid_print, sort_child_properties_last, non_constant_identifier_names, use_build_context_synchronously
 
 import 'dart:typed_data';
 
@@ -12,7 +12,6 @@ import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart'; // ignore: unused_import
 import 'package:miamiga_app/pages/edit_perfil.dart';
-import 'package:miamiga_app/pages/inicio_o_registrar.dart';
 import 'package:miamiga_app/pages/network_helper.dart';
 import 'package:miamiga_app/resources/image_data.dart';
 import 'package:miamiga_app/utils/utils.dart';
@@ -27,6 +26,7 @@ class PerfilScreen extends StatefulWidget {
 }
 
 class _PerfilScreenState extends State<PerfilScreen> {
+  final ciController = TextEditingController();
   final fullnameController = TextEditingController();
   final phoneController = TextEditingController();
   final locationController = TextEditingController();
@@ -35,35 +35,19 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   String? imageUrl;
 
-  // void signUserOut(BuildContext context) async {
-  //   await FirebaseAuth.instance.signOut();
-  //   await _googleSignIn.signOut();
-  //   // ignore: use_build_context_synchronously
-  //   Navigator.of(context).pushReplacement(
-  //     MaterialPageRoute(
-  //       builder: (context) => const LoginOrRegister(),
-  //     ),
-  //   );
-  // }
+  // String? ci;
+
   void signUserOut(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     await _googleSignIn.signOut();
-
-    Future.delayed(Duration.zero, () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const LoginOrRegister(),
-        ),
-      );
-    });
+    Navigator.of(context).pushReplacementNamed('/inicio_o_registrar');
   }
 
   void editPersonalData() async {
     //i want a navigator to go to the edit perfil page
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EditPerfil(user: widget.user),
-      ),
+    Navigator.of(context).pushNamed(
+      '/editar_perfil_usuario',
+      arguments: widget.user,
     );
   }
 
@@ -99,6 +83,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
         if (documentSnapshot.exists) {
           // Fetch user data including latitude and longitude
+          ciController.text = documentSnapshot['ci'].toString();
           fullnameController.text = documentSnapshot['fullname'];
           phoneController.text = documentSnapshot['phone'].toString();
           double latitude = documentSnapshot['lat'] as double;
@@ -228,6 +213,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   @override
   void dispose() {
+    ciController.dispose();
     fullnameController.dispose();
     phoneController.dispose();
     locationController.dispose();
@@ -315,6 +301,22 @@ class _PerfilScreenState extends State<PerfilScreen> {
                           return Column(
                             children: [
                               const SizedBox(height: 25),
+                              // Text(
+                              //   'Carnet de Identidad: ${ci ?? 'No disponible'}',
+                              //   style: const TextStyle(
+                              //     fontSize: 16,
+                              //     fontWeight: FontWeight.bold,
+                              //   ),
+                              // ),
+                              MyTextField(
+                                controller: ciController,
+                                text: 'Carnet de Identidad',
+                                hintText: 'Carnet de Identidad',
+                                obscureText: false,
+                                isEnabled: false,
+                                isVisible: true,
+                              ),
+                              const SizedBox(height: 15),
                               MyTextField(
                                 controller: fullnameController,
                                 text: 'Nombre Completo',
@@ -349,7 +351,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                           );
                         }
                       }),
-                  const SizedBox(height: 70),
+                  const SizedBox(height: 50),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 25.0),
                     child: Text(

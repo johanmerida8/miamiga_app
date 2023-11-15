@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:miamiga_app/index/indexes.dart';
 
+
 // ignore: unused_import
 import 'package:miamiga_app/pages/auth_page.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -40,6 +41,13 @@ class MyApp extends StatelessWidget {
           incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0.0, long: 0.0, imageUrls: [], audioUrl: ''),
           denuncianteData: DenuncianteData(fullName: '', ci: 0, phone: 0, lat: 0.0, long: 0.0), future: Future(() => null),
         ),
+        '/completar_perfil':(context) => const CompleteProfile(),
+        '/perfil_usuario':(context) => PerfilScreen(user: FirebaseAuth.instance.currentUser),
+        '/perfil_supervisor':(context) => PerfilSupervisor(user: FirebaseAuth.instance.currentUser),
+        '/editar_perfil_usuario':(context) => EditPerfil(user: FirebaseAuth.instance.currentUser),
+        '/editar_perfil_supervisor':(context) => EditPerfilSupervisor(user: FirebaseAuth.instance.currentUser),
+        '/casos':(context) => CasePage(item: FirebaseAuth.instance.currentUser!.uid),
+        '/leer_casos':(context) => ReadCases(user: FirebaseAuth.instance.currentUser!, incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0.0, long: 0.0, imageUrls: [], audioUrl: ''), denuncianteData: DenuncianteData(fullName: '', ci: 0, phone: 0, lat: 0.0, long: 0.0)),
       },
     );
   }

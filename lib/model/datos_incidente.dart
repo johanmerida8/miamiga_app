@@ -15,3 +15,14 @@ class IncidentData {
     required this.audioUrl,
   });
 }
+
+IncidentData initializeDefaultData() {
+  return IncidentData(
+    description: '',
+    date: DateTime.now(),
+    lat: 0.0,
+    long: 0.0,
+    imageUrls: [],
+    audioUrl: '',
+  );
+}

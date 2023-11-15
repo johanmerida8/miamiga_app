@@ -1,4 +1,4 @@
-// ignore_for_file: library_prefixes, depend_on_referenced_packages, use_build_context_synchronously
+// ignore_for_file: library_prefixes, depend_on_referenced_packages, use_build_context_synchronously, must_be_immutable, avoid_print
 
 import 'dart:io';
 
@@ -11,15 +11,13 @@ import 'package:miamiga_app/components/my_button.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/model/datos_denunciante.dart';
 import 'package:miamiga_app/model/datos_incidente.dart';
-import 'package:miamiga_app/pages/incidente.dart';
-import 'package:miamiga_app/pages/ventanas_usuario.dart';
 import 'package:path/path.dart' as Path;
 
 class AlertaScreen extends StatefulWidget {
   final User? user;
   final DenuncianteData denuncianteData;
-  final IncidentData incidentData;
-  const AlertaScreen({
+  IncidentData incidentData;
+  AlertaScreen({
     super.key,
     required this.user,
     required this.denuncianteData,
@@ -54,18 +52,31 @@ class _AlertaScreenState extends State<AlertaScreen> {
     return downloadUrl;
   }
 
-  void editarDenuncia() async{
-    //i want a navigator to go to the edit perfil page
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => DenunciaIncidente(
-          user: widget.user, 
-          incidentData: widget.incidentData, 
-          denuncianteData: widget.denuncianteData
-        ), 
-      ),
-    );
+  void _saveAndGoBack() {
+    Navigator.of(context).pop(widget.incidentData);
   }
+
+//   void editarDenuncia() async {
+//   final result = await Navigator.of(context).push(
+//     MaterialPageRoute(
+//       builder: (context) => DenunciaIncidente(
+//         user: widget.user, 
+//         incidentData: widget.incidentData, 
+//         denuncianteData: widget.denuncianteData
+//       ), 
+//     ),
+//   );
+
+//   // Handle the result returned from DenunciaIncidente
+//   if (result != null) {
+//     // Update your data based on the result if needed
+//     print('Result from DenunciaIncidente: $result');
+//     _saveAndGoBack();
+//   } else {
+//     // User canceled, handle accordingly
+//     print('User canceled the operation');
+//   }
+// }
 
   void alert() async {
     Future<void>? createCaseFuture;
@@ -188,13 +199,13 @@ class _AlertaScreenState extends State<AlertaScreen> {
   }
 
   void homeScreen() async {
-    //i want a navigator to go to the home screen
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const Screens(), 
-      ),
-    );
-  }
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/screens_usuario', // Replace with the actual name of your home screen route
+    (route) => false, // This predicate removes all the previous routes
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -222,7 +233,7 @@ class _AlertaScreenState extends State<AlertaScreen> {
                       const SizedBox(height: 50),
                       MyImportantBtn(
                         text: 'Editar',
-                        onTap: editarDenuncia,
+                        onTap: _saveAndGoBack,
                       ),
 
                       const SizedBox(height: 50),
