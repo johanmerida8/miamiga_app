@@ -1,392 +1,146 @@
-// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously
+// ignore_for_file: avoid_print, unused_element, depend_on_referenced_packages
 
-import 'dart:io';
-
-import 'package:audioplayers/audioplayers.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:miamiga_app/components/headers.dart';
-import 'package:miamiga_app/components/limit_characters.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
-import 'package:miamiga_app/components/row_button.dart';
-import 'package:miamiga_app/pages/map.dart';
-import 'package:miamiga_app/pages/supervisor.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:miamiga_app/index/indexes.dart';
+import 'package:miamiga_app/model/datos_usuarios.dart';
+import 'package:path/path.dart' as path;
 
-class CasePage extends StatefulWidget {
-  final String item;
+class DetalleDenuncia extends StatefulWidget {
+  final Future future;
+  final String userIdDenuncia;
+  final User? user;
+  final IncidentData incidentData;
+  final DenuncianteData denuncianteData;
 
-  const CasePage({super.key, required this.item});
+  const DetalleDenuncia({
+    super.key,
+    required this.userIdDenuncia,
+    required this.user,
+    required this.incidentData,
+    required this.denuncianteData,
+    required this.future,
+  });
 
   @override
-  State<CasePage> createState() => _CasePageState();
+  State<DetalleDenuncia> createState() => _DetalleDenunciaState();
 }
 
-class _CasePageState extends State<CasePage> {
-  final desController = TextEditingController();
-  final dateController = TextEditingController();
-  final latController = TextEditingController();
-  final longController = TextEditingController();
+class _DetalleDenunciaState extends State<DetalleDenuncia> {
+  List<String> imageUrls = [];
+  String audioUrl = '';
+  AudioPlayer audioPlayer = AudioPlayer();
 
-  List<XFile> pickedImages = [];
-  String? selectedAudioPath;
-  final audioPlayer = AudioPlayer();
-  bool isPlaying = false;
-  Duration duration = Duration.zero;
-  Duration position = Duration.zero;
-  double sliderValue = 0.0;
+  final descripcionController = TextEditingController();
+  final fechaController = TextEditingController();
+  final locationController = TextEditingController();
 
-  String audioTitle = '';
+  String userIdPrueba = '';
 
-  List<File> pickedFiles = [];
-  bool isDocumentReceived = false;
+  final CollectionReference _details =
+      FirebaseFirestore.instance.collection('cases');
 
-  bool isImageReceived = false;
-  bool isMediaReceived = false;
+  Future<void> _fetchCasesAssignedToSupervisor() async {
+    print('useridDenuncia_________${widget.userIdDenuncia}');
+    final QuerySnapshot querySnapshot =
+        await _details.where('supervisor', isEqualTo: widget.user!.uid).get();
 
-  Future selectImageFile() async {
-    final result = await ImagePicker().pickMultiImage(
-      maxWidth: double.infinity,
-      maxHeight: double.infinity,
-      imageQuality: 80,
-    );
-    if (result != null) {
-      setState(() {
-        for (var image in result) {
-          pickedImages.add(image);
-        }
-        isImageReceived = true;
-      });
-    }
-  }
+    if (querySnapshot.docs.isNotEmpty) {
+      print('Cases assigned to supervisor found');
 
-  void cargarImagen() async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content: SizedBox(
-            width: 300, // Adjust the width as needed
-            height: 300, // Adjust the height as needed
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Padding(
-                  padding: EdgeInsets.all(24.0),
-                  child: Text(
-                    'Seleccionar Imagen',
-                    style: TextStyle(
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    itemCount: pickedImages.length,
-                    itemBuilder: (context, index) {
-                      final image = pickedImages[index];
-                      return GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                content: SizedBox(
-                                  child: Image.file(
-                                    File(image.path),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        child: Image.file(
-                          File(image.path),
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                if (pickedImages.isEmpty)
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: ElevatedButton.icon(
-                      onPressed: selectImageFile,
-                      icon: const Icon(
-                        Icons.add_a_photo,
-                        size: 50,
-                      ),
-                      label: const SizedBox.shrink(),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(0),
-                        backgroundColor: const Color.fromRGBO(248, 181, 149, 1),
-                      ),
-                    ),
-                  ),
-                if (pickedImages.isNotEmpty)
-                  ElevatedButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(
-                          const Color.fromRGBO(248, 181, 149, 1)),
-                    ),
-                    onPressed: () {
-                      selectImageFile();
-                    },
-                    child: const Text('Agregar otra imagen'),
-                  )
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> selectDocumentFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'],
-    );
-
-    if (result != null) {
-      setState(() {
-        pickedFiles.add(File(result.files.single.path!));
-        isDocumentReceived = true;
-      });
-    }
-  }
-
-  void cargarDocumento() async {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            content: SizedBox(
-              width: 300,
-              height: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Text(
-                      'Seleccionar Documento',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: PageView.builder(
-                        itemCount: pickedFiles.length,
-                        itemBuilder: (context, index) {
-                          final file = pickedFiles[index];
-                          return GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    content: SizedBox(
-                                      child: Text(
-                                        'Documento: ${file.path}',
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                            child: Text(
-                              'Documento: ${file.path}',
-                            ),
-                          );
-                        }),
-                  ),
-                  if (pickedFiles.isEmpty)
-                    SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: ElevatedButton.icon(
-                        onPressed: selectDocumentFile,
-                        icon: const Icon(
-                          Icons.file_copy,
-                          size: 50,
-                        ),
-                        label: const SizedBox.shrink(),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(0),
-                          backgroundColor:
-                              const Color.fromRGBO(248, 181, 149, 1),
-                        ),
-                      ),
-                    ),
-                  if (pickedFiles.isNotEmpty)
-                    ElevatedButton(
-                      style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(
-                              const Color.fromRGBO(248, 181, 149, 1))),
-                      onPressed: selectDocumentFile,
-                      child: const Text('Agregar otro documento'),
-                    )
-                ],
-              ),
-            ),
-          );
-        });
-  }
-
-  Future<void> pickAudio() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-    );
-
-    if (result != null) {
-      PlatformFile file = result.files.first;
-      selectedAudioPath = file.path;
-
-      audioTitle = file.name;
-
-      print('audioRuta______$selectedAudioPath');
-
-      // Intenta cargar y reproducir el audio
-      try {
-        await audioPlayer.setSourceUrl(selectedAudioPath!);
-        await audioPlayer.getDuration().then((value) {
-          if (value != null) {
-            setState(() {
-              duration = value;
-              isMediaReceived = true;
-            });
-          }
-        });
-      } catch (e) {
-        print('Error al cargar/reproducir el audio: $e');
-        // Maneja el error aquí (por ejemplo, muestra un mensaje al usuario)
+      for (final doc in querySnapshot.docs) {
+        await _fetchUserDataAndAddToFirestore(doc); // Use await here
       }
     } else {
-      // El usuario canceló la selección
-      selectedAudioPath = null;
+      print('No cases assigned to supervisor found');
     }
   }
 
-  void cargarAudio() async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content: SizedBox(
-            width: 300, // Adjust the width as needed
-            height: 300, // Adjust the height as needed
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Text(
-                      'Seleccionar Audio',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  if (selectedAudioPath != null)
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        'Titulo del Audio: $audioTitle',
-                        style: const TextStyle(
-                          fontSize: 18.0,
-                        ),
-                      ),
-                    ),
-                  if (selectedAudioPath != null)
-                    Column(
-                      children: [
-                        Slider(
-                          value: sliderValue,
-                          min: 0.0,
-                          max: duration.inSeconds.toDouble(),
-                          onChanged: (value) {
-                            setState(() {
-                              sliderValue = value;
-                              audioPlayer
-                                  .seek(Duration(seconds: value.toInt()));
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  if (selectedAudioPath != null)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        IconButton(
-                          icon:
-                              Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                          iconSize: 50.0,
-                          onPressed: () {
-                            if (isPlaying) {
-                              audioPlayer.pause();
-                            } else {
-                              audioPlayer.resume();
-                            }
-                            setState(() {
-                              isPlaying = !isPlaying;
-                            });
-                          },
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            audioPlayer.stop();
-                            setState(() {
-                              isPlaying = false;
-                              sliderValue = 0.0;
-                            });
-                          },
-                          icon: const Icon(Icons.stop),
-                        ),
-                      ],
-                    ),
-                  SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: ElevatedButton.icon(
-                        onPressed: pickAudio,
-                        icon: const Icon(
-                          Icons.music_note,
-                          size: 50,
-                        ),
-                        label: const SizedBox.shrink(),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(0),
-                          backgroundColor:
-                              const Color.fromRGBO(248, 181, 149, 1),
-                        ),
-                      )),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  Future<void> _fetchUserDataAndAddToFirestore(DocumentSnapshot doc) async {
+    final userId = doc['user']; // Get the user ID from the 'user' field
+
+    if (userId != null) {
+      print('User ID found: $userId');
+
+      // Fetch user data
+      final DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userSnapshot.exists) {
+        print('Fetched user data: ${userSnapshot.data()}');
+        // Fetch user data including fullname
+        final fullname = userSnapshot['fullname'];
+        print('User fullname: $fullname');
+
+        final descripcionIncidente = doc['incidente']['descripcionIncidente'];
+        final fechaIncidente = doc['incidente']['fechaIncidente'].toDate();
+        final latitude = doc['incidente']['lat'];
+        final longitude = doc['incidente']['long'];
+        final List<dynamic> imageUrls = doc['incidente']['imageUrl'];
+        final String audioUrl = doc['incidente']['audioUrl'];
+
+        lat = latitude;
+        long = longitude;
+
+        final location = await getUserLocation();
+        locationController.text = location;
+
+        final userData = UserData(
+            descripcionIncidente: descripcionIncidente,
+            fechaIncidente: fechaIncidente,
+            latitude: latitude,
+            longitude: longitude,
+            imageUrls: List<String>.from(imageUrls),
+            audioUrl: audioUrl);
+
+        setState(() {
+          descripcionController.text = userData.descripcionIncidente;
+          fechaController.text = userData.fechaIncidente.toString();
+          this.imageUrls = userData.imageUrls;
+          this.audioUrl = userData.audioUrl;
+        });
+
+        // ... rest of your code
+      } else {
+        print('No user document found');
+      }
+    } else {
+      print('No user ID found');
+    }
+  }
+
+  Future<void> _fetchData() async {
+    try {
+      if (widget.user != null) {
+        _fetchCasesAssignedToSupervisor();
+      } else {
+        print('User is null');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    userIdPrueba = widget.userIdDenuncia;
+    _fetchData();
   }
 
   double lat = 0.0;
   double long = 0.0;
 
-  Future<Map<String, String>> getUserModifiedLocation() async {
+  Future<String> getUserLocation() async {
     try {
       final List<Placemark> placemarks = await placemarkFromCoordinates(
         lat,
@@ -395,346 +149,152 @@ class _CasePageState extends State<CasePage> {
 
       if (placemarks.isNotEmpty) {
         final Placemark placemark = placemarks[0];
-        final String calle = placemark.thoroughfare ?? '';
-        final String avenida = placemark.subLocality ?? '';
-        final String localidad = placemark.locality ?? '';
-        final String pais = placemark.country ?? '';
+        final String street = placemark.thoroughfare ?? '';
+        final String locality = placemark.locality ?? '';
+        final String country = placemark.country ?? '';
 
-        final String fullStreet =
-            avenida.isNotEmpty ? '$calle, $avenida' : calle;
-
-        return {
-          'street': fullStreet,
-          'locality': localidad,
-          'country': pais,
-        };
+        final formattedAddress = '$street, $locality, $country';
+        return formattedAddress;
       } else {
-        return {
-          'street': 'No se pudo obtener la ubicacion',
-          'locality': 'No se pudo obtener la ubicacion',
-          'country': 'No se pudo obtener la ubicacion',
-        };
+        return 'No se pudo obtener la ubicación';
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('Error al obtener la ubicacion modificada: $e');
-      return {
-        'street': 'No se pudo obtener la ubicacion',
-        'locality': 'No se pudo obtener la ubicacion',
-        'country': 'No se pudo obtener la ubicacion',
-      };
+      print('Error en obteniendo ubicacion del usuario: $e');
+      return 'No se pudo obtener la ubicación';
     }
   }
 
-  void createEvidence() async {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        });
-
+  Future<void> updateLocation() async {
     try {
-      if (areFieldsEmpty()) {
-        Navigator.pop(context);
-        showErrorMsg('Por favor llene todos los campos');
-        return;
-      }
-
-      await createUserDocument(
-        pickedImages[0].path,
-        selectedAudioPath!,
-        pickedFiles[0].path,
-        desController.text.trim(),
-        date,
-        double.parse(latController.text.trim()),
-        double.parse(longController.text.trim()),
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Evidencia enviada exitosamente!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      final String location = await getUserLocation();
+      locationController.text = location;
     } catch (e) {
-      // ignore: avoid_print
-      print('Error al enviar el evidencia: $e');
-      Navigator.pop(context);
+      print('Error actualizando ubicacion: $e');
     }
   }
-
-  Future<void> createUserDocument(
-      String imageUrl,
-      String audioUrl,
-      String document,
-      String descripcion,
-      DateTime fecha,
-      double lat,
-      double long) async {
-    try {
-      await FirebaseFirestore.instance.collection('evidence').doc().set({
-        'imageUrl': imageUrl,
-        'audioUrl': audioUrl,
-        'document': document,
-        'descripcion': descripcion,
-        'fecha': fecha,
-        'lat': lat,
-        'long': long,
-      });
-    } catch (e) {
-      // ignore: avoid_print
-      print('Error al crear documento del usuario: $e');
-      Navigator.pop(context);
-    }
-  }
-
-  bool areFieldsEmpty() {
-    return desController.text.trim().isEmpty ||
-        dateController.text.trim().isEmpty ||
-        latController.text.trim().isEmpty ||
-        longController.text.trim().isEmpty ||
-        !isImageReceived ||
-        !isMediaReceived ||
-        !isDocumentReceived ||
-        lat == 0.0 ||
-        long == 0.0;
-  }
-
-  void showErrorMsg(String errorMsg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(errorMsg,
-            style: const TextStyle(
-              color: Colors.white,
-            )),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    audioPlayer.dispose();
-    pickedImages.clear();
-    pickedFiles.clear();
-    desController.dispose();
-    dateController.dispose();
-    latController.dispose();
-    longController.dispose();
-    super.dispose();
-  }
-
-  DateTime date = DateTime.now();
-  TimeOfDay timeOfDay = TimeOfDay.now();
-  bool changesMade = false;
 
   @override
   Widget build(BuildContext context) {
+    String fileName = path.basenameWithoutExtension(audioUrl);
+    List<String> parts = fileName.split('-');
+    parts.removeAt(0); // Remove the first part (the UID)
+    String finalFileName =
+        parts.join('-'); // Join the remaining parts back together
     return Scaffold(
-        body: SafeArea(
-      child: SingleChildScrollView(
+      body: SafeArea(
+        child: SingleChildScrollView(
           child: Stack(
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 15),
-              const Row(
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Header(
-                    header: 'Datos de la Evidencia',
+                  const SizedBox(height: 25),
+                  Row(
+                    children: [
+                      const Header(
+                        header: 'Detalle del Denuncia',
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 15),
+                  CarouselSlider(
+                    options: CarouselOptions(height: 400.0),
+                    items: imageUrls.map((imageUrl) {
+                      return Builder(builder: (BuildContext context) {
+                        return Container(
+                          width: MediaQuery.of(context).size.width,
+                          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                          decoration: const BoxDecoration(color: Colors.amber),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      });
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Audio URL: $finalFileName',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.play_arrow),
+                        onPressed: () async {
+                          await audioPlayer.setUrl(audioUrl);
+                          await audioPlayer.play();
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.pause),
+                        onPressed: () async {
+                          await audioPlayer.pause();
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.stop),
+                        onPressed: () async {
+                          await audioPlayer.stop();
+                        },
+                      ),
+                    ],
+                  ),
+                  MyTextField(
+                      controller: descripcionController,
+                      hintText: 'Descripción del incidente',
+                      text: 'Descripción del incidente',
+                      obscureText: false,
+                      isEnabled: false,
+                      isVisible: true),
+                  const SizedBox(height: 10),
+                  MyTextField(
+                      controller: fechaController,
+                      hintText: 'Fecha del incidente',
+                      text: 'Fecha del incidente',
+                      obscureText: false,
+                      isEnabled: false,
+                      isVisible: true),
+                  const SizedBox(height: 10),
+                  MyTextField(
+                      controller: locationController,
+                      hintText: 'Ubicación del incidente',
+                      text: 'Ubicación del incidente',
+                      obscureText: false,
+                      isEnabled: false,
+                      isVisible: true),
+                  // const SizedBox(height: 15),
+                  // MyImportantBtn(
+                  //   onTap: () {
+                  //     print('Passing user: ${widget.user}');
+                  //     Navigator.of(context).pushNamed(
+                  //       '/evidence',
+                  //       arguments: {
+                  //         'user': widget.user
+                  //       }
+                  //     );
+                  //   },
+                  //   text: 'Realizar denuncia'
+                  // ),
+                  const SizedBox(height: 25),
                 ],
               ),
-              const SizedBox(height: 15),
-              Row(
-                children: [
-                  Expanded(
-                    child: RowButton(
-                      onTap: cargarImagen,
-                      text: 'Imagen',
-                      icon: Icons.image,
-                    ),
-                  ),
-                  Expanded(
-                    child: RowButton(
-                      onTap: cargarDocumento,
-                      text: 'Documento',
-                      icon: Icons.file_copy,
-                    ),
-                  ),
-                  Expanded(
-                    child: RowButton(
-                      onTap: cargarAudio,
-                      text: 'Audio',
-                      icon: Icons.audiotrack,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              LimitCharacter(
-                controller: desController,
-                text: 'Descripción del Evidencia', // 'Descripción del Incidente
-                hintText: 'Descripción del Evidencia',
-                obscureText: false,
-                isEnabled: true,
-                isVisible: true,
-              ),
-              const SizedBox(height: 15),
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Seleccionar Fecha del Evidencia',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '${date.year}/${date.month}/${date.day}',
-                      style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
-                            const Color.fromRGBO(248, 181, 149, 1)),
-                      ),
-                      child: const Text('Seleccionar Fecha'),
-                      onPressed: () async {
-                        DateTime? selectedDate = await showDatePicker(
-                          context: context,
-                          initialDate: date,
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime(2100),
-                          builder: (BuildContext context, Widget? child) {
-                            return Theme(
-                              data: ThemeData.dark().copyWith(
-                                colorScheme: const ColorScheme.dark(
-                                  primary: Color.fromRGBO(248, 181, 149, 1),
-                                  onPrimary: Colors.black,
-                                  surface: Color.fromRGBO(248, 181, 149, 1),
-                                  onSurface: Colors.white,
-                                ),
-                                dialogBackgroundColor: Colors.black,
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (selectedDate == null) return;
-
-                        // Create a new DateTime object with the selected date and the fixed time
-                        DateTime selectedDateTime = DateTime(
-                          selectedDate.year,
-                          selectedDate.month,
-                          selectedDate.day,
-                          timeOfDay.hour,
-                          timeOfDay.minute,
-                        );
-
-                        setState(() {
-                          date = selectedDateTime;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              FutureBuilder<Map<String, String>>(
-                  future: getUserModifiedLocation(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else {
-                      final locationData = snapshot.data!;
-                      final calle = locationData['street'];
-                      final localidad = locationData['locality'];
-                      final pais = locationData['country'];
-                      return Column(
-                        children: [
-                          /*hidden lat and long*/
-                          const SizedBox(height: 10),
-                          MyTextField(
-                            controller: latController,
-                            text: 'Latitud',
-                            hintText: 'Latitud',
-                            obscureText: false,
-                            isEnabled: false,
-                            isVisible: false,
-                          ),
-                          const SizedBox(height: 10),
-                          MyTextField(
-                            controller: longController,
-                            text: 'Longitud',
-                            hintText: 'Longitud',
-                            obscureText: false,
-                            isEnabled: false,
-                            isVisible: false,
-                          ),
-                          /*hidden lat and long*/
-                          const SizedBox(height: 10),
-                          Text('Calle: $calle'),
-                          Text('Localidad: $localidad'),
-                          Text('Pais: $pais'),
-                        ],
-                      );
-                    }
-                  }),
-              const SizedBox(height: 15),
-              ElevatedButton(
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
-                      const Color.fromRGBO(248, 181, 149, 1)),
-                ),
-                onPressed: () async {
-                  final selectedLocation = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return const CurrentLocationScreen();
-                      },
-                    ),
-                  );
-                  if (selectedLocation != null &&
-                      selectedLocation is Map<String, double>) {
-                    setState(() {
-                      lat = selectedLocation['latitude']!;
-                      long = selectedLocation['longitude']!;
-                    });
-                    final locationData = await getUserModifiedLocation();
-                    final calle = locationData['street'];
-                    final localidad = locationData['locality'];
-                    final pais = locationData['country'];
-                    latController.text = lat.toString();
-                    longController.text = long.toString();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Column(children: [
-                          Text('Calle: $calle'),
-                          Text('Localidad: $localidad'),
-                          Text('Pais: $pais'),
-                        ]),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                    changesMade = true;
-                  }
-                },
-                child: const Text('Seleccionar Ubicacion'),
-              ),
-              const SizedBox(height: 30),
-              MyImportantBtn(onTap: createEvidence, text: 'Finalizar'),
             ],
           ),
-        ],
-      )),
-    ));
+        ),
+      ),
+    );
   }
 }

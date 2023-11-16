@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/index/indexes.dart';
 
-
 class ReadCases extends StatefulWidget {
   final User? user;
   final IncidentData incidentData;
@@ -22,27 +21,25 @@ class ReadCases extends StatefulWidget {
 }
 
 class _ReadCasesState extends State<ReadCases> {
-
   Future<List<DenuncianteData>> _fetchCases() async {
-  final User? user = FirebaseAuth.instance.currentUser;
+    final User? user = FirebaseAuth.instance.currentUser;
 
-  if (user == null) {
-    return [];
+    if (user == null) {
+      return [];
+    }
+
+    final QuerySnapshot supervisorCasesSnapshot =
+        await FirebaseFirestore.instance
+            .collection('cases')
+            .where('supervisor', isEqualTo: user.uid)
+            // .orderBy('denunciante.fullname')  // Order by fullName
+            .get(const GetOptions(source: Source.server));
+
+    return _mapSnapshotToDenuncianteData(supervisorCasesSnapshot);
   }
 
-  final QuerySnapshot supervisorCasesSnapshot = 
-    await FirebaseFirestore.instance
-    .collection('cases')
-    .where('supervisor', isEqualTo: widget.user!.uid)
-    // .orderBy('denunciante.fullname')  // Order by fullName
-    .get(const GetOptions(source: Source.server));
-
-  return _mapSnapshotToDenuncianteData(supervisorCasesSnapshot);
-}
-
-List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
-  return snapshot.docs
-    .map((doc) {
+  List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
+    return snapshot.docs.map((doc) {
       final data = doc.data() as Map<String, dynamic>;
       final denuncianteData = data['denunciante'] as Map<String, dynamic>?;
 
@@ -54,6 +51,7 @@ List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
           phone: denuncianteData['phone'] ?? 0,
           lat: denuncianteData['lat'] ?? 0.0,
           long: denuncianteData['long'] ?? 0.0,
+          documentId: doc.id,
         );
       } else {
         return DenuncianteData(
@@ -63,19 +61,18 @@ List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
           phone: 0,
           lat: 0.0,
           long: 0.0,
+          documentId: doc.id,
         );
       }
-    })
-    .toList();
+    }).toList();
   }
 
-    @override
-    void initState() {
-      super.initState();
-      _fetchCases();
-    }
+  @override
+  void initState() {
+    super.initState();
 
-      
+    _fetchCases();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,10 +87,9 @@ List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(
-                      color: Color.fromRGBO(255, 87, 110, 1),
-                    )
-                  );
+                      child: CircularProgressIndicator(
+                    color: Color.fromRGBO(255, 87, 110, 1),
+                  ));
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -106,20 +102,28 @@ List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
                       return GestureDetector(
                         onTap: () {
                           if (widget.user != null) {
-                            // print('Passing user: ${caseData.user}');
-                            Navigator.of(context).pushNamed(
-                              '/detalle_denuncia',
-                              arguments: {
-                                'user': widget.user,
-                                'incidentData': widget.incidentData,
-                                'denuncianteData': widget.denuncianteData,
-                              },
+                            final userId = caseData.userId;
+                            final documentId = caseData.documentId;
+
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) {
+                                _fetchCases();
+                                return DetalleDenuncia(
+                                  userIdDenuncia: userId!,
+                                  documentIdDenuncia: documentId,
+                                  user: widget.user,
+                                  incidentData: widget.incidentData,
+                                  denuncianteData: widget.denuncianteData,
+                                  future: Future(() => null),
+                                );
+                              }),
                             );
                           }
                         },
                         child: Card(
                           color: const Color.fromRGBO(248, 181, 149, 1),
-                          margin: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10),
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 25.0, vertical: 10),
                           child: Padding(
                             padding: const EdgeInsets.all(10),
                             child: Column(

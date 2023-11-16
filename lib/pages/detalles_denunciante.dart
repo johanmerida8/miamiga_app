@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_print, unused_element, depend_on_referenced_packages
 
-
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,18 +15,21 @@ import 'package:path/path.dart' as path;
 
 class DetalleDenuncia extends StatefulWidget {
   final Future future;
+  final String userIdDenuncia;
+  final String documentIdDenuncia;
   final User? user;
   final IncidentData incidentData;
   final DenuncianteData denuncianteData;
-  
 
   const DetalleDenuncia({
-      super.key,
-      required this.user,
-      required this.incidentData,
-      required this.denuncianteData,
-      required this.future,
-    });
+    super.key,
+    required this.userIdDenuncia,
+    required this.documentIdDenuncia,
+    required this.user,
+    required this.incidentData,
+    required this.denuncianteData,
+    required this.future,
+  });
 
   @override
   State<DetalleDenuncia> createState() => _DetalleDenunciaState();
@@ -42,101 +44,116 @@ class _DetalleDenunciaState extends State<DetalleDenuncia> {
   final fechaController = TextEditingController();
   final locationController = TextEditingController();
 
-  final CollectionReference _details = 
-        FirebaseFirestore.instance.collection('cases');
+  String userIdPrueba = '';
+  DocumentSnapshot? selectedCase;
+
+  final CollectionReference _details =
+      FirebaseFirestore.instance.collection('cases');
 
   Future<void> _fetchCasesAssignedToSupervisor() async {
-  final QuerySnapshot querySnapshot = await _details
-      .where('supervisor', isEqualTo: widget.user!.uid)
-      .get();
+    final QuerySnapshot querySnapshot = await _details
+        .where(FieldPath.documentId, isEqualTo: widget.documentIdDenuncia)
+        .where('estado', isEqualTo: "pendiente")
+        .where('supervisor', isEqualTo: widget.user!.uid)
+        .where('user', isEqualTo: userIdPrueba)
+        .get();
 
-  if (querySnapshot.docs.isNotEmpty) {
-    print('Cases assigned to supervisor found');
-    for (final doc in querySnapshot.docs) {
-      await _fetchUserDataAndAddToFirestore(doc);  // Use await here
-    }
-  } else {
-    print('No cases assigned to supervisor found');
-  }
-}
+    if (querySnapshot.docs.isNotEmpty) {
+      print('Cases assigned to supervisor found');
 
-Future<void> _fetchUserDataAndAddToFirestore(DocumentSnapshot doc) async {
-  final userId = doc['user'];  // Get the user ID from the 'user' field
-
-  if (userId != null) {
-    print('User ID found: $userId');
-
-    // Fetch user data
-    final DocumentSnapshot userSnapshot =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
-
-    if (userSnapshot.exists) {
-      print('Fetched user data: ${userSnapshot.data()}');
-      // Fetch user data including fullname
-      final fullname = userSnapshot['fullname'];
-      print('User fullname: $fullname');
-
-      final descripcionIncidente = doc['incidente']['descripcionIncidente'];
-      final fechaIncidente = doc['incidente']['fechaIncidente'].toDate();
-      final latitude = doc['incidente']['lat'];
-      final longitude = doc['incidente']['long'];
-      final List<dynamic> imageUrls = doc['incidente']['imageUrl'];
-      final String audioUrl = doc['incidente']['audioUrl'];
-
-      lat = latitude;
-      long = longitude;
-
-      final location = await getUserLocation();
-      locationController.text = location;
-
-      final userData = UserData(
-        descripcionIncidente: descripcionIncidente, 
-        fechaIncidente: fechaIncidente, 
-        latitude: latitude, 
-        longitude: longitude, 
-        imageUrls: List<String>.from(imageUrls), 
-        audioUrl: audioUrl
-      );
-
-      setState(() {
-        descripcionController.text = userData.descripcionIncidente;
-        fechaController.text = userData.fechaIncidente.toString();
-        this.imageUrls = userData.imageUrls;
-        this.audioUrl = userData.audioUrl;
-      });
-
-      // ... rest of your code
+      for (final doc in querySnapshot.docs) {
+        if (doc.id == widget.documentIdDenuncia) {
+          // Asigna el documento actual
+          setState(() {
+            selectedCase = doc;
+          });
+        }
+        print('documentoId__________${selectedCase?.id}');
+        await _fetchUserDataAndAddToFirestore(doc); // Use await here
+      }
     } else {
-      print('No user document found');
+      print('No cases assigned to supervisor found');
     }
-  } else {
-    print('No user ID found');
   }
-}
 
-Future<void> _fetchData() async {
-  try {
-    if (widget.user != null) {
-      _fetchCasesAssignedToSupervisor();
+  Future<void> _fetchUserDataAndAddToFirestore(DocumentSnapshot doc) async {
+    final userId = doc['user']; // Get the user ID from the 'user' field
+
+    if (userId != null) {
+      print('User ID found: $userId');
+
+      // Fetch user data
+      final DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userSnapshot.exists) {
+        print('Fetched user data: ${userSnapshot.data()}');
+        // Fetch user data including fullname
+        final fullname = userSnapshot['fullname'];
+        print('User fullname: $fullname');
+
+        final descripcionIncidente = doc['incidente']['descripcionIncidente'];
+        final fechaIncidente = doc['incidente']['fechaIncidente'].toDate();
+        final latitude = doc['incidente']['lat'];
+        final longitude = doc['incidente']['long'];
+        final List<dynamic> imageUrls = doc['incidente']['imageUrl'];
+        final String audioUrl = doc['incidente']['audioUrl'];
+
+        lat = latitude;
+        long = longitude;
+
+        final location = await getUserLocation();
+        locationController.text = location;
+
+        final userData = UserData(
+            descripcionIncidente: descripcionIncidente,
+            fechaIncidente: fechaIncidente,
+            latitude: latitude,
+            longitude: longitude,
+            imageUrls: List<String>.from(imageUrls),
+            audioUrl: audioUrl);
+
+        setState(() {
+          descripcionController.text = userData.descripcionIncidente;
+          fechaController.text = userData.fechaIncidente.toString();
+          this.imageUrls = userData.imageUrls;
+          this.audioUrl = userData.audioUrl;
+        });
+
+        // ... rest of your code
+      } else {
+        print('No user document found');
+      }
     } else {
-      print('User is null');
+      print('No user ID found');
     }
-  } catch (e) {
-    print('Error fetching data: $e');
   }
-}
 
+  Future<void> _fetchData() async {
+    try {
+      if (widget.user != null) {
+        _fetchCasesAssignedToSupervisor();
+      } else {
+        print('User is null');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
 
-@override
-void initState() {
-  super.initState();
-  _fetchData();
-}
+  @override
+  void initState() {
+    super.initState();
+    userIdPrueba = widget.userIdDenuncia;
+    _fetchData();
+  }
 
   double lat = 0.0;
   double long = 0.0;
 
-    Future<String> getUserLocation() async {
+  Future<String> getUserLocation() async {
     try {
       final List<Placemark> placemarks = await placemarkFromCoordinates(
         lat,
@@ -169,14 +186,13 @@ void initState() {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     String fileName = path.basenameWithoutExtension(audioUrl);
     List<String> parts = fileName.split('-');
     parts.removeAt(0); // Remove the first part (the UID)
-    String finalFileName = parts.join('-'); // Join the remaining parts back together
+    String finalFileName =
+        parts.join('-'); // Join the remaining parts back together
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -204,22 +220,18 @@ void initState() {
                   CarouselSlider(
                     options: CarouselOptions(height: 400.0),
                     items: imageUrls.map((imageUrl) {
-                      return Builder(
-                        builder: (BuildContext context) {
-                          return Container(
-                            width: MediaQuery.of(context).size.width,
-                            margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                            decoration: const BoxDecoration(
-                              color: Colors.amber
-                            ),
-                            child: Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                            ),
-                          );
-                        }
-                      );
-                    }).toList(), 
+                      return Builder(builder: (BuildContext context) {
+                        return Container(
+                          width: MediaQuery.of(context).size.width,
+                          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                          decoration: const BoxDecoration(color: Colors.amber),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      });
+                    }).toList(),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -254,31 +266,28 @@ void initState() {
                     ],
                   ),
                   MyTextField(
-                    controller: descripcionController, 
-                    hintText: 'Descripción del incidente', 
-                    text: 'Descripción del incidente', 
-                    obscureText: false, 
-                    isEnabled: false, 
-                    isVisible: true
-                  ),
+                      controller: descripcionController,
+                      hintText: 'Descripción del incidente',
+                      text: 'Descripción del incidente',
+                      obscureText: false,
+                      isEnabled: false,
+                      isVisible: true),
                   const SizedBox(height: 10),
                   MyTextField(
-                    controller: fechaController, 
-                    hintText: 'Fecha del incidente', 
-                    text: 'Fecha del incidente', 
-                    obscureText: false, 
-                    isEnabled: false, 
-                    isVisible: true
-                  ),
+                      controller: fechaController,
+                      hintText: 'Fecha del incidente',
+                      text: 'Fecha del incidente',
+                      obscureText: false,
+                      isEnabled: false,
+                      isVisible: true),
                   const SizedBox(height: 10),
                   MyTextField(
-                    controller: locationController, 
-                    hintText: 'Ubicación del incidente', 
-                    text: 'Ubicación del incidente', 
-                    obscureText: false, 
-                    isEnabled: false, 
-                    isVisible: true
-                  ),
+                      controller: locationController,
+                      hintText: 'Ubicación del incidente',
+                      text: 'Ubicación del incidente',
+                      obscureText: false,
+                      isEnabled: false,
+                      isVisible: true),
                   // const SizedBox(height: 15),
                   // MyImportantBtn(
                   //   onTap: () {
@@ -289,7 +298,7 @@ void initState() {
                   //         'user': widget.user
                   //       }
                   //     );
-                  //   }, 
+                  //   },
                   //   text: 'Realizar denuncia'
                   // ),
                   const SizedBox(height: 25),

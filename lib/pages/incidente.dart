@@ -113,7 +113,7 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
           this.widget.incidentData.lat == 0.0 ||
           this.widget.incidentData.long == 0.0 ||
           !isImageReceived ||
-          !isMediaReceived) {
+          selectedAudioPath == null) {
         showErrorMsg(
             context, 'Por favor, ingrese todos los datos del incidente');
       } else {

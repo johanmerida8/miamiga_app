@@ -8,7 +8,6 @@ import 'package:miamiga_app/pages/detalles.dart';
 import 'package:miamiga_app/pages/perfil_supervisor.dart';
 
 class ScreenSupervisor extends StatefulWidget {
-
   const ScreenSupervisor({
     super.key,
   });
@@ -32,7 +31,23 @@ class _ScreenSupervisorState extends State<ScreenSupervisor> {
 
     _screens = [
       CasePage(item: user!.uid),
-      ReadCases(user: user!, incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0, long: 0, imageUrls: [], audioUrl: ''), denuncianteData: DenuncianteData(ci: 1, fullName: '', phone: 1, lat: 0, long: 0)),
+      ReadCases(
+          user: user!,
+          incidentData: IncidentData(
+              description: '',
+              date: DateTime.now(),
+              lat: 0,
+              long: 0,
+              imageUrls: [],
+              audioUrl: ''),
+          denuncianteData: DenuncianteData(
+            ci: 1,
+            fullName: '',
+            phone: 1,
+            lat: 0,
+            long: 0,
+            documentId: '',
+          )),
       PerfilSupervisor(user: user!),
     ];
   }
@@ -41,8 +56,6 @@ class _ScreenSupervisorState extends State<ScreenSupervisor> {
   void dispose() {
     super.dispose();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +69,8 @@ class _ScreenSupervisorState extends State<ScreenSupervisor> {
             Container(
               color: const Color.fromRGBO(192, 108, 132, 1),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12),
                 child: GNav(
                   backgroundColor: const Color.fromRGBO(192, 108, 132, 1),
                   color: Colors.white,

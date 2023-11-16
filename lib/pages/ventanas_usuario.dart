@@ -40,8 +40,14 @@ class _ScreensState extends State<Screens> {
               long: 0,
               imageUrls: [],
               audioUrl: ''),
-          denunciaData:
-              DenuncianteData(ci: 1, fullName: '', phone: 1, lat: 0, long: 0)),
+          denunciaData: DenuncianteData(
+            ci: 1,
+            fullName: '',
+            phone: 1,
+            lat: 0,
+            long: 0,
+            documentId: '',
+          )),
       const SobreScreen(),
       PerfilScreen(user: user!),
     ];
