@@ -31,6 +31,7 @@ class _ReadCasesState extends State<ReadCases> {
     final QuerySnapshot supervisorCasesSnapshot =
         await FirebaseFirestore.instance
             .collection('cases')
+            .where('estado', isEqualTo: "pendiente")
             .where('supervisor', isEqualTo: user.uid)
             // .orderBy('denunciante.fullname')  // Order by fullName
             .get(const GetOptions(source: Source.server));
