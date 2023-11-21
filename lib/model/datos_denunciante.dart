@@ -5,6 +5,8 @@ class DenuncianteData{
   int phone;
   double lat;
   double long;
+  String documentId;
+  String estado;
 
   DenuncianteData({
     this.userId,
@@ -13,5 +15,7 @@ class DenuncianteData{
     required this.phone,
     required this.lat,
     required this.long,
+    required this.documentId,
+    required this.estado,
   });
 }

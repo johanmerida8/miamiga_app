@@ -136,7 +136,7 @@ class _AlertaScreenState extends State<AlertaScreen> {
                   Navigator.popUntil(context, ModalRoute.withName('/screens_usuario'));
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Denuncia creada'),
+                      content: Text('Caso creado con éxito'),
                       backgroundColor: Colors.green,
                     ),
                   );

@@ -309,19 +309,19 @@ class _CompleteProfileState extends State<CompleteProfile> {
 
               const SizedBox(height: 30),
 
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacementNamed('/screens_usuario');
-                }, 
-                child: const Text(
-                  'Omitir',
-                  style: TextStyle(
-                    color: Color.fromRGBO(255, 87, 110, 1),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.of(context).pushReplacementNamed('/screens_usuario');
+              //   }, 
+              //   child: const Text(
+              //     'Omitir',
+              //     style: TextStyle(
+              //       color: Color.fromRGBO(255, 87, 110, 1),
+              //       fontSize: 18,
+              //       fontWeight: FontWeight.bold,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         )

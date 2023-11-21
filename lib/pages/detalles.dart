@@ -33,6 +33,7 @@ class _ReadCasesState extends State<ReadCases> {
   final QuerySnapshot supervisorCasesSnapshot = 
     await FirebaseFirestore.instance
     .collection('cases')
+    .where('estado', isEqualTo: 'pendiente')
     .where('supervisor', isEqualTo: widget.user!.uid)
     // .orderBy('denunciante.fullname')  // Order by fullName
     .get(const GetOptions(source: Source.server));
@@ -54,6 +55,8 @@ List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
           phone: denuncianteData['phone'] ?? 0,
           lat: denuncianteData['lat'] ?? 0.0,
           long: denuncianteData['long'] ?? 0.0,
+          documentId: doc.id,
+          estado: data['estado'] ?? '',
         );
       } else {
         return DenuncianteData(
@@ -63,6 +66,8 @@ List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
           phone: 0,
           lat: 0.0,
           long: 0.0,
+          documentId: doc.id,
+          estado: data['estado'] ?? '',
         );
       }
     })
@@ -106,14 +111,20 @@ List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
                       return GestureDetector(
                         onTap: () {
                           if (widget.user != null) {
-                            // print('Passing user: ${caseData.user}');
-                            Navigator.of(context).pushNamed(
-                              '/detalle_denuncia',
-                              arguments: {
-                                'user': widget.user,
-                                'incidentData': widget.incidentData,
-                                'denuncianteData': widget.denuncianteData,
-                              },
+                            final userId = caseData.userId;
+                            final documentId = caseData.documentId;
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) {
+                                _fetchCases();
+                                return DetalleDenuncia(
+                                  userIdDenuncia: userId!,
+                                  documentIdDenuncia: documentId,
+                                  user: widget.user,
+                                  incidentData: widget.incidentData,
+                                  denuncianteData: widget.denuncianteData,
+                                  future: Future(() => null),
+                                );
+                              })
                             );
                           }
                         },
@@ -135,6 +146,13 @@ List<DenuncianteData> _mapSnapshotToDenuncianteData(QuerySnapshot snapshot) {
                                 ),
                                 Text(
                                   'CI: ${caseData.ci}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  'Estado: ${caseData.estado}',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     color: Colors.white,

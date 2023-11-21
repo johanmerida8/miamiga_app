@@ -6,12 +6,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
-import 'package:miamiga_app/pages/editar_perfil_supervisor.dart';
 import 'package:miamiga_app/pages/network_helper.dart';
 import 'package:miamiga_app/resources/image_data_super.dart';
 import 'package:miamiga_app/utils/utils.dart';
@@ -80,27 +78,27 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
           fullnameController.text = documentSnapshot['fullname'];
           ciController.text = documentSnapshot['ci'].toString();
           phoneController.text = documentSnapshot['phone'].toString();
-          double latitude = documentSnapshot['lat'] as double;
-          double longitude = documentSnapshot['long'] as double;
+          // double latitude = documentSnapshot['lat'] as double;
+          // double longitude = documentSnapshot['long'] as double;
 
-          lat = latitude;
-          long = longitude;
+          // lat = latitude;
+          // long = longitude;
           loadProfileImage(widget.user!.uid);
 
-          final List<Placemark> placemarks =
-              await placemarkFromCoordinates(latitude, longitude);
+          // final List<Placemark> placemarks =
+          //     await placemarkFromCoordinates(latitude, longitude);
 
-          if (placemarks.isNotEmpty) {
-            final Placemark placemark = placemarks[0];
-            final String street = placemark.thoroughfare ?? '';
-            final String locality = placemark.locality ?? '';
-            final String country = placemark.country ?? '';
+          // if (placemarks.isNotEmpty) {
+          //   final Placemark placemark = placemarks[0];
+          //   final String street = placemark.thoroughfare ?? '';
+          //   final String locality = placemark.locality ?? '';
+          //   final String country = placemark.country ?? '';
 
-            final locationString = '$street, $locality, $country';
-            locationController.text = locationString;
-          } else {
-            locationController.text = 'No se pudo obtener la ubicación';
-          }
+          //   final locationString = '$street, $locality, $country';
+          //   locationController.text = locationString;
+          // } else {
+          //   locationController.text = 'No se pudo obtener la ubicación';
+          // }
         } else {
           // Handle the case where the document doesn't exist
           print("No existe el documento.");
@@ -127,41 +125,41 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
     /* getUserLocation(); */
   }
 
-  double lat = 0.0;
-  double long = 0.0;
+  // double lat = 0.0;
+  // double long = 0.0;
 
-  Future<String> getUserLocation() async {
-    try {
-      final List<Placemark> placemarks = await placemarkFromCoordinates(
-        lat,
-        long,
-      );
+  // Future<String> getUserLocation() async {
+  //   try {
+  //     final List<Placemark> placemarks = await placemarkFromCoordinates(
+  //       lat,
+  //       long,
+  //     );
 
-      if (placemarks.isNotEmpty) {
-        final Placemark placemark = placemarks[0];
-        final String street = placemark.thoroughfare ?? '';
-        final String locality = placemark.locality ?? '';
-        final String country = placemark.country ?? '';
+  //     if (placemarks.isNotEmpty) {
+  //       final Placemark placemark = placemarks[0];
+  //       final String street = placemark.thoroughfare ?? '';
+  //       final String locality = placemark.locality ?? '';
+  //       final String country = placemark.country ?? '';
 
-        final formattedAddress = '$street, $locality, $country';
-        return formattedAddress;
-      } else {
-        return 'No se pudo obtener la ubicación';
-      }
-    } catch (e) {
-      print('Error en obteniendo ubicacion del usuario: $e');
-      return 'No se pudo obtener la ubicación';
-    }
-  }
+  //       final formattedAddress = '$street, $locality, $country';
+  //       return formattedAddress;
+  //     } else {
+  //       return 'No se pudo obtener la ubicación';
+  //     }
+  //   } catch (e) {
+  //     print('Error en obteniendo ubicacion del usuario: $e');
+  //     return 'No se pudo obtener la ubicación';
+  //   }
+  // }
 
-  Future<void> updateLocation() async {
-    try {
-      final String location = await getUserLocation();
-      locationController.text = location;
-    } catch (e) {
-      print('Error actualizando ubicacion: $e');
-    }
-  }
+  // Future<void> updateLocation() async {
+  //   try {
+  //     final String location = await getUserLocation();
+  //     locationController.text = location;
+  //   } catch (e) {
+  //     print('Error actualizando ubicacion: $e');
+  //   }
+  // }
 
   void editPersonalData() async {
     //i want a navigator to go to the edit perfil page
@@ -328,15 +326,15 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
                                 isEnabled: false,
                                 isVisible: true,
                               ),
-                              const SizedBox(height: 15),
-                              MyTextField(
-                                controller: locationController,
-                                text: 'Ubicación',
-                                hintText: 'Ubicación',
-                                obscureText: false,
-                                isEnabled: false,
-                                isVisible: true,
-                              ),
+                              // const SizedBox(height: 15),
+                              // MyTextField(
+                              //   controller: locationController,
+                              //   text: 'Ubicación',
+                              //   hintText: 'Ubicación',
+                              //   obscureText: false,
+                              //   isEnabled: false,
+                              //   isVisible: true,
+                              // ),
                               const SizedBox(height: 15),
                               MyTextField(
                                 controller: phoneController,

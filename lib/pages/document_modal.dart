@@ -20,7 +20,7 @@ class _DocumentModalState extends State<DocumentModal> {
     return AlertDialog(
       content: SizedBox(
         width: 300,
-        height: 300,
+        height: 200,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[

@@ -8,6 +8,7 @@ class MyTextField extends StatefulWidget {
   final bool isEnabled;
   final bool isVisible;
   final ValueChanged<String>? onChanged;
+  final FormFieldValidator<String>? validator;
 
   const MyTextField({
     Key? key,
@@ -18,6 +19,7 @@ class MyTextField extends StatefulWidget {
     required this.isEnabled,
     required this.isVisible,
     this.onChanged,
+    this.validator,
   }) : super(key: key);
 
   @override
@@ -27,6 +29,7 @@ class MyTextField extends StatefulWidget {
 class _MyTextFieldState extends State<MyTextField> {
   late bool isFocused;
   late bool isPasswordVisible;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -57,63 +60,66 @@ class _MyTextFieldState extends State<MyTextField> {
       visible: widget.isVisible,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.text,
-              style: TextStyle(
-                color: isFocused ? Colors.black : Colors.black,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Stack(
-              alignment: Alignment.centerRight,
-              children: [
-                TextField(
-                  controller: widget.controller,
-                  obscureText: widget.obscureText && !isPasswordVisible,
-                  onChanged: widget.onChanged,
-                  decoration: InputDecoration(
-                    enabledBorder: const OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey.shade400),
-                    ),
-                    fillColor: Colors.grey.shade100,
-                    filled: true,
-                    hintText: widget.hintText,
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                  ),
-                  enabled: widget.isEnabled,
-                  onTap: () {
-                    setFocused(true);
-                  },
-                  onSubmitted: (value) {
-                    setFocused(false);
-                  },
-                  onEditingComplete: () {
-                    setFocused(false);
-                  },
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.text,
+                style: TextStyle(
+                  color: isFocused ? Colors.black : Colors.black,
                 ),
-                if (widget.obscureText)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        setPasswordVisibility(!isPasswordVisible);
-                      },
-                      child: Icon(
-                        isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+              ),
+              const SizedBox(height: 8),
+              Stack(
+                alignment: Alignment.centerRight,
+                children: [
+                  TextField(
+                    controller: widget.controller,
+                    obscureText: widget.obscureText && !isPasswordVisible,
+                    onChanged: widget.onChanged,
+                    decoration: InputDecoration(
+                      enabledBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey.shade400),
+                      ),
+                      fillColor: Colors.grey.shade100,
+                      filled: true,
+                      hintText: widget.hintText,
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                    ),
+                    enabled: widget.isEnabled,
+                    onTap: () {
+                      setFocused(true);
+                    },
+                    onSubmitted: (value) {
+                      setFocused(false);
+                    },
+                    onEditingComplete: () {
+                      setFocused(false);
+                    },
+                  ),
+                  if (widget.obscureText)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: GestureDetector(
+                        onTap: () {
+                          setPasswordVisibility(!isPasswordVisible);
+                        },
+                        child: Icon(
+                          isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

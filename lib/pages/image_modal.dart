@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,13 +8,15 @@ class ImageModal extends StatefulWidget {
   final List<XFile> pickedImages;
   final Future<List<XFile>> Function() onImagesSelected;
 
-  ImageModal({required this.pickedImages, required this.onImagesSelected});
+  const ImageModal({super.key, required this.pickedImages, required this.onImagesSelected});
 
   @override
   _ImageModalState createState() => _ImageModalState();
 }
 
 class _ImageModalState extends State<ImageModal> {
+
+  
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -37,26 +41,47 @@ class _ImageModalState extends State<ImageModal> {
                 itemCount: widget.pickedImages.length,
                 itemBuilder: (context, index) {
                   final image = widget.pickedImages[index];
-                  return GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            content: SizedBox(
-                              child: Image.file(
-                                File(image.path),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
+                  return Stack(
+                    children: <Widget>[
+                      GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                content: SizedBox(
+                                  child: Image.file(
+                                    File(image.path),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
-                      );
-                    },
-                    child: Image.file(
-                      File(image.path),
-                      fit: BoxFit.cover,
-                    ),
+                        child: Center(
+                          child: Image.file(
+                            File(image.path),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              widget.pickedImages.removeAt(index);
+                            });
+                          },
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),

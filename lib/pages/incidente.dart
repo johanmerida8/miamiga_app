@@ -95,6 +95,7 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
     }
     if (isMediaReceived && pickedAudios != null && pickedAudios.isNotEmpty) {
       widget.incidentData.audioUrl = pickedAudios.first.path;
+      audioPath = pickedAudios.first.path;
     } else {
       widget.incidentData.audioUrl = audioPath;
     }
@@ -230,21 +231,21 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
   }
 
   Future<void> cargarAudio() async {
-  List<File> newAudios = await pickAudio();
-
-  showDialog(
+  await showDialog(
     context: context,
     builder: (BuildContext context) {
       return AudioModal(
-        pickedAudios: newAudios,
+        pickedAudios: pickedAudios,
         onAudiosSelected: () async {
           FilePickerResult? result = await FilePicker.platform.pickFiles(
             type: FileType.audio,
           );
 
-          if (result != null) {
-            newAudios.add(File(result.files.first.path!));
-          }
+          List<File> newAudios = [];
+            if (result != null) {
+              newAudios.add(File(result.files.first.path!));
+              audioPath = result.files.first.path ?? '';
+            }
           return newAudios;
         },
       );

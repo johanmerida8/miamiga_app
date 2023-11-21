@@ -5,6 +5,7 @@ class EvidenceData {
   double long;
   List<String> imageUrls = [];
   String audioUrl = '';
+  String selectedUser;
   String documentUrl = '';
 
   EvidenceData({
@@ -14,6 +15,7 @@ class EvidenceData {
     required this.long,
     required this.imageUrls,
     required this.audioUrl,
+    required this.selectedUser,
     required this.documentUrl,
   });
 }

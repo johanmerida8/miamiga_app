@@ -39,15 +39,17 @@ class MyApp extends StatelessWidget {
         '/detalle_denuncia':(context) => DetalleDenuncia(
           user: FirebaseAuth.instance.currentUser,
           incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0.0, long: 0.0, imageUrls: [], audioUrl: ''),
-          denuncianteData: DenuncianteData(fullName: '', ci: 0, phone: 0, lat: 0.0, long: 0.0), future: Future(() => null),
+          denuncianteData: DenuncianteData(fullName: '', ci: 0, phone: 0, lat: 0.0, long: 0.0, documentId: '', estado: ''), future: Future(() => null), 
+          userIdDenuncia: '', documentIdDenuncia: '',
         ),
         '/completar_perfil':(context) => const CompleteProfile(),
         '/perfil_usuario':(context) => PerfilScreen(user: FirebaseAuth.instance.currentUser),
         '/perfil_supervisor':(context) => PerfilSupervisor(user: FirebaseAuth.instance.currentUser),
         '/editar_perfil_usuario':(context) => EditPerfil(user: FirebaseAuth.instance.currentUser),
         '/editar_perfil_supervisor':(context) => EditPerfilSupervisor(user: FirebaseAuth.instance.currentUser),
-        '/casos':(context) => CasePage(item: FirebaseAuth.instance.currentUser!.uid),
-        '/leer_casos':(context) => ReadCases(user: FirebaseAuth.instance.currentUser!, incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0.0, long: 0.0, imageUrls: [], audioUrl: ''), denuncianteData: DenuncianteData(fullName: '', ci: 0, phone: 0, lat: 0.0, long: 0.0)),
+        '/casos':(context) => CasePage(item: FirebaseAuth.instance.currentUser!.uid, user: FirebaseAuth.instance.currentUser!),
+        '/leer_casos':(context) => ReadCases(user: FirebaseAuth.instance.currentUser!, incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0.0, long: 0.0, imageUrls: [], audioUrl: ''), 
+        denuncianteData: DenuncianteData(fullName: '', ci: 0, phone: 0, lat: 0.0, long: 0.0, documentId: '', estado: '')),
       },
     );
   }

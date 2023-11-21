@@ -2,8 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart' as just_audio;
 
 class AudioModal extends StatefulWidget {
   final List<File> pickedAudios;
@@ -16,9 +15,10 @@ class AudioModal extends StatefulWidget {
 }
 
 class _AudioModalState extends State<AudioModal> {
-  final AudioPlayer audioPlayer = AudioPlayer();
+  just_audio.AudioPlayer audioPlayer = just_audio.AudioPlayer();
+  String audioUrl = '';
   bool isPlaying = false;
-  double sliderValue = 0.0;
+  // double sliderValue = 0.0;
   Duration duration = const Duration();
 
   @override
@@ -36,8 +36,6 @@ class _AudioModalState extends State<AudioModal> {
     return AlertDialog(
       content: SingleChildScrollView(
         child: SizedBox(
-          width: 300,
-          height: 400,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -64,42 +62,26 @@ class _AudioModalState extends State<AudioModal> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          icon:
-                              Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                          onPressed: () {
-                            if (isPlaying) {
-                              audioPlayer.pause();
-                            } else {
-                              audioPlayer.resume();
-                            }
-                            setState(() {
-                              isPlaying = !isPlaying;
-                            });
+                          icon: const Icon(Icons.play_arrow),
+                          onPressed: () async {
+                            audioUrl = widget.pickedAudios.first.path;
+                            await audioPlayer.setUrl('file://$audioUrl');
+                            await audioPlayer.play();
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.pause),
+                          onPressed: () async {
+                            await audioPlayer.pause();
                           },
                         ),
                         IconButton(
                           icon: const Icon(Icons.stop),
-                          onPressed: () {
-                            audioPlayer.stop();
-                            setState(() {
-                              isPlaying = false;
-                              sliderValue =
-                                  0.0; // Reiniciar el valor del Slider al detener el audio
-                            });
+                          onPressed: () async {
+                            await audioPlayer.stop();
                           },
                         ),
                       ],
-                    ),
-                    Slider(
-                      value: sliderValue,
-                      min: 0.0,
-                      max: duration.inSeconds.toDouble(),
-                      onChanged: (value) {
-                        setState(() {
-                          sliderValue = value;
-                          audioPlayer.seek(Duration(seconds: value.toInt()));
-                        });
-                      },
                     ),
                   ],
                 ),

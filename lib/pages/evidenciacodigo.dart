@@ -414,7 +414,8 @@ class _CasePageState extends State<CasePage> {
           imageUrls: pickedImages.map((e) => e.path).toList(),
           audioUrl: selectedAudioPath!,
           // audioUrl: pickedAudios.map((audio) => audio.path).toList().toString(),
-          documentUrl: pickedDocument.first.path,
+          documentUrl: pickedDocument.first.path, 
+          selectedUser: '',
         ),
       );
 

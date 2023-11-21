@@ -17,7 +17,7 @@ class SobreScreen extends StatelessWidget {
           ),
           SizedBox(height: 20),
           Text(
-            'Sobre del aplicacion',
+            'Sobre la aplicacion',
             style: TextStyle(
               fontSize: 30,
               fontWeight: FontWeight.bold,
@@ -27,7 +27,7 @@ class SobreScreen extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 18),
             child: Text(
-              'Miamiga es una aplicacion que brinda en ayudar a las mujeres que sufren con violencia de todo tipo, ya sea fisica, psicologica, sexual, entre otras. Su objetivo es proporcionar un medio seguro para que las mujeres puedan denunciar a sus agresores, brindando asi la ayuda necesaria para salir de estas situaciones dificiles.',
+              'Miamiga es la aplicacion que brinda ayuda a las mujeres que sufren con violencia de todo tipo, ya sea fisica, psicologica, sexual, entre otras. Su objetivo es proporcionar un medio seguro para que las mujeres puedan denunciar a sus agresores, brindando asi la ayuda necesaria para salir de estas situaciones dificiles.',
               style: TextStyle(
                 fontSize: 20,  
               ),

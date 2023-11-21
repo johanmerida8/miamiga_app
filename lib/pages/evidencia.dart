@@ -1,10 +1,11 @@
-// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously, avoid_print, duplicate_ignore
+// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously, avoid_print, duplicate_ignore, unused_element, library_prefixes, unused_field
 
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
@@ -14,6 +15,7 @@ import 'package:miamiga_app/components/limit_characters.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/row_button.dart';
+import 'package:miamiga_app/index/indexes.dart';
 import 'package:miamiga_app/model/datos_evidencia.dart';
 import 'package:miamiga_app/pages/audio_modal.dart';
 import 'package:miamiga_app/pages/document_modal.dart';
@@ -22,9 +24,14 @@ import 'package:miamiga_app/pages/map.dart';
 import 'package:path/path.dart' as Path;
 
 class CasePage extends StatefulWidget {
+  final User? user;
   final String item;
 
-  const CasePage({super.key, required this.item});
+  const CasePage({
+    super.key, 
+    required this.item,
+    required this.user,
+  });
 
   @override
   State<CasePage> createState() => _CasePageState();
@@ -102,6 +109,7 @@ class _CasePageState extends State<CasePage> {
     if (result != null) {
       setState(() {
         for (var image in result) {
+          print('Selected image: ${image.path}');
           pickedImages.add(image);
         }
         isImageReceived = true;
@@ -142,6 +150,7 @@ class _CasePageState extends State<CasePage> {
 
     if (result != null) {
       setState(() {
+        print('Selected document: ${result.files.single.path}');
         pickedDocument.add(File(result.files.single.path!));
         isDocumentReceived = true;
       });
@@ -180,6 +189,8 @@ class _CasePageState extends State<CasePage> {
     if (result != null) {
       PlatformFile file = result.files.first;
       selectedAudioPath = file.path;
+
+      print('Selected audio: $selectedAudioPath');
 
       audioTitle = file.name;
 
@@ -278,6 +289,57 @@ class _CasePageState extends State<CasePage> {
     }
   }
 
+//   String? _selectedName;
+//   final List<String> _names = [];
+
+List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
+  return snapshot.docs
+    .map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final denuncianteData = data['denunciante'] as Map<String, dynamic>?;
+
+      if (denuncianteData != null) {
+        return DenuncianteData(
+          userId: denuncianteData['userId'] ?? '',
+          fullName: denuncianteData['fullname'] ?? '',
+          ci: denuncianteData['ci'] ?? 0,
+          phone: denuncianteData['phone'] ?? 0,
+          lat: denuncianteData['lat'] ?? 0.0,
+          long: denuncianteData['long'] ?? 0.0,
+          documentId: doc.id, 
+          estado: data['estado'] ?? '',
+        );
+      } else {
+        return DenuncianteData(
+          userId: '',
+          fullName: '', 
+          ci: 0, 
+          phone: 0, 
+          lat: 0.0, 
+          long: 0.0, 
+          documentId: doc.id,
+          estado: data['estado'] ?? '',
+        );
+      }
+    }).toList();
+  }
+
+  Future<List<DenuncianteData>> _fetchData() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return [];
+    }
+
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+    .collection('cases')
+    .where('estado', isEqualTo: 'pendiente')
+    .where('supervisor', isEqualTo: widget.user!.uid)
+    .get();
+
+    return _mapSnapshotToUserCase(snapshot);
+  }
+
   void createEvidence() async {
     showDialog(
         context: context,
@@ -292,12 +354,14 @@ class _CasePageState extends State<CasePage> {
     try {
       if (pickedImages.isEmpty ||
           pickedDocument.isEmpty ||
-          audioPath == "" ||
+          audioPath.isEmpty ||
           // selectedAudioPath == null ||
           desController.text.trim().isEmpty ||
           date == null ||
           lat == 0.0 ||
-          long == 0.0) {
+          long == 0.0 ||
+          _selectedName == null) {
+        Navigator.pop(context);
         showErrorMsg('Por favor llene todos los campos');
         return;
       }
@@ -312,8 +376,11 @@ class _CasePageState extends State<CasePage> {
           // audioUrl: selectedAudioPath!,
           audioUrl: audioPath,
           documentUrl: pickedDocument.first.path,
+          selectedUser: _selectedName!.documentId,
         ),
       );
+
+      Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -321,12 +388,27 @@ class _CasePageState extends State<CasePage> {
           backgroundColor: Colors.green,
         ),
       );
+      
+      Navigator.pushNamed(context, '/screens_supervisor');
+
+      setState(() {
+        pickedImages.clear();
+        pickedDocument.clear();
+        pickedAudios.clear();
+        desController.clear();
+        dateController.clear();
+        latController.clear();
+        longController.clear();
+        isImageReceived = false;
+        isDocumentReceived = false;
+        isMediaReceived = false;
+        _selectedName = null;
+        changesMade = false;
+      });
+
     } catch (e) {
-      // ignore: avoid_print
-      print('Error al enviar el evidencia: $e');
-    } finally {
-      await Future.delayed(const Duration(seconds: 3));
       Navigator.pop(context);
+      print('Error al enviar el evidencia: $e');
     } 
   }
 
@@ -348,7 +430,16 @@ class _CasePageState extends State<CasePage> {
         'fecha': evidenceData.date,
         'lat': evidenceData.lat,
         'long': evidenceData.long,
+        'case': _selectedName!.documentId,
       });
+
+      await FirebaseFirestore.instance
+          .collection('cases')
+          .doc(_selectedName!.documentId)
+          .update({
+            'estado': 'finalizado',
+          });
+
       Navigator.pop(context);
       print('Evidencia creada exitosamente! con el ID: ${docRef.id}');
     } catch (e) {
@@ -369,6 +460,16 @@ class _CasePageState extends State<CasePage> {
     );
   }
 
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _fetchCaseUsers().then((value) {
+  //     setState(() {
+  //       denunciantesList = value;
+  //     });
+  //   });
+  // }
+
   @override
   void dispose() {
     super.dispose();
@@ -377,6 +478,8 @@ class _CasePageState extends State<CasePage> {
   DateTime date = DateTime.now();
   TimeOfDay timeOfDay = TimeOfDay.now();
   bool changesMade = false;
+
+  DenuncianteData? _selectedName;
 
   @override
   Widget build(BuildContext context) {
@@ -581,8 +684,37 @@ class _CasePageState extends State<CasePage> {
                 },
                 child: const Text('Seleccionar Ubicacion'),
               ),
+              const SizedBox(height: 25),
+              FutureBuilder<List<DenuncianteData>>(
+                future: _fetchData(), 
+                builder: (BuildContext context, AsyncSnapshot<List<DenuncianteData>> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else {
+                    return DropdownButton<String>(
+                      value: _selectedName?.userId,
+                      hint: const Text('Seleccionar Denunciante'),
+                      items: snapshot.data!.map((DenuncianteData user) {
+                        return DropdownMenuItem<String>(
+                          value: user.userId,
+                          child: Text(user.fullName),
+                        );
+                      }).toList(), 
+                      onChanged: (String? userId) {
+                        setState(() {
+                          _selectedName = snapshot.data!.firstWhere((user) => user.userId == userId);
+                          print('Selected User: ${_selectedName!.fullName}');
+                        });
+                      },
+                    );
+                  }
+                }
+              ),
               const SizedBox(height: 30),
               MyImportantBtn(onTap: createEvidence, text: 'Finalizar'),
+              const SizedBox(height: 30),
             ],
           ),
         ],

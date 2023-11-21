@@ -45,6 +45,8 @@ class _RegistroPageState extends State<RegistroPage> {
   final latController = TextEditingController();
   final longController = TextEditingController();
 
+  final _formKey = GlobalKey<FormState>();
+
   void signUserUp() async {
   showDialog(
     context: context,
@@ -98,17 +100,7 @@ class _RegistroPageState extends State<RegistroPage> {
         ),
       );
 
-      /* Future.delayed(const Duration(milliseconds: 300), () {
-        Navigator.pop(context);
-      }); */
-
-      //Navigate to the verification screen
-      // Navigator.of(context).pushReplacement(
-      //   MaterialPageRoute(
-      //     builder: (context) => const VerifyEmail(),
-      //   ),
-      // );
-
+      Navigator.pushReplacementNamed(context, '/screens_usuario');
       
     } else {
       Navigator.pop(context); //cerrar el dialogo en caso de error
@@ -125,6 +117,7 @@ class _RegistroPageState extends State<RegistroPage> {
 
 bool areFieldsEmpty() {
   return emailController.text.isEmpty ||
+      passwordController.text.isEmpty ||
       fullnameController.text.isEmpty ||
       identityController.text.isEmpty ||
       phoneController.text.isEmpty;
@@ -158,6 +151,7 @@ bool areFieldsEmpty() {
             'phone': phone,
             'lat': lat,
             'long': long,
+            'role': 'Usuario Normal',
           });
     } catch (e) {
       // ignore: avoid_print
@@ -259,7 +253,7 @@ bool areFieldsEmpty() {
     super.dispose();
   }
 
-  String selectedRole = "Usuario Normal";
+  // String selectedRole = "Usuario Normal";
 
   @override
   Widget build(BuildContext context) {
@@ -289,6 +283,14 @@ bool areFieldsEmpty() {
                 obscureText: false,
                 isEnabled: true,
                 isVisible: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, ingrese un correo electrónico';
+                  } else if (!value.contains('@')) {
+                    return 'Por favor, ingrese un correo electrónico válido';
+                  }
+                  return null;
+                },
               ),
 
               const SizedBox(height: 10),
@@ -328,6 +330,12 @@ bool areFieldsEmpty() {
                 obscureText: false,
                 isEnabled: true,
                 isVisible: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, ingrese su nombre completo';
+                  }
+                  return null;
+                }
               ),
               
               const SizedBox(height: 10),

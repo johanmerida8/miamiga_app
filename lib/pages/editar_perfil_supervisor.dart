@@ -118,11 +118,11 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
         if (documentSnapshot.exists) {
           fullnameController.text = documentSnapshot['fullname'];
           phoneController.text = documentSnapshot['phone'].toString();
-          double latitude = documentSnapshot['lat'] as double;
-          double longitude = documentSnapshot['long'] as double;
+          // double latitude = documentSnapshot['lat'] as double;
+          // double longitude = documentSnapshot['long'] as double;
 
-          lat = latitude;
-          long = longitude;
+          // lat = latitude;
+          // long = longitude;
 
           // final List<Placemark> placemarks = await placemarkFromCoordinates(
           //   latitude,
@@ -160,45 +160,45 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
     _fetchData();
   }
 
-  Future<Map<String, String>> getUserModifiedLocation() async {
-    try {
-      final List<Placemark> placemarks = await placemarkFromCoordinates(
-        lat,
-        long,
-      );
+  // Future<Map<String, String>> getUserModifiedLocation() async {
+  //   try {
+  //     final List<Placemark> placemarks = await placemarkFromCoordinates(
+  //       lat,
+  //       long,
+  //     );
 
-      if (placemarks.isNotEmpty) {
-        final Placemark placemark = placemarks[0];
-        final String calle = placemark.thoroughfare ?? '';
-        final String avenida = placemark.subLocality ?? '';
-        final String localidad = placemark.locality ?? '';
-        final String pais = placemark.country ?? '';
+  //     if (placemarks.isNotEmpty) {
+  //       final Placemark placemark = placemarks[0];
+  //       final String calle = placemark.thoroughfare ?? '';
+  //       final String avenida = placemark.subLocality ?? '';
+  //       final String localidad = placemark.locality ?? '';
+  //       final String pais = placemark.country ?? '';
 
-        final String fullStreet =
-            avenida.isNotEmpty ? '$calle, $avenida' : calle;
+  //       final String fullStreet =
+  //           avenida.isNotEmpty ? '$calle, $avenida' : calle;
 
-        return {
-          'street': fullStreet,
-          'locality': localidad,
-          'country': pais,
-        };
-      } else {
-        return {
-          'street': 'No se pudo obtener la ubicacion',
-          'locality': 'No se pudo obtener la ubicacion',
-          'country': 'No se pudo obtener la ubicacion',
-        };
-      }
-    } catch (e) {
-      // ignore: avoid_print
-      print('Error al obtener la ubicacion modificada: $e');
-      return {
-        'street': 'No se pudo obtener la ubicacion',
-        'locality': 'No se pudo obtener la ubicacion',
-        'country': 'No se pudo obtener la ubicacion',
-      };
-    }
-  }
+  //       return {
+  //         'street': fullStreet,
+  //         'locality': localidad,
+  //         'country': pais,
+  //       };
+  //     } else {
+  //       return {
+  //         'street': 'No se pudo obtener la ubicacion',
+  //         'locality': 'No se pudo obtener la ubicacion',
+  //         'country': 'No se pudo obtener la ubicacion',
+  //       };
+  //     }
+  //   } catch (e) {
+  //     // ignore: avoid_print
+  //     print('Error al obtener la ubicacion modificada: $e');
+  //     return {
+  //       'street': 'No se pudo obtener la ubicacion',
+  //       'locality': 'No se pudo obtener la ubicacion',
+  //       'country': 'No se pudo obtener la ubicacion',
+  //     };
+  //   }
+  // }
 
   // bool changesMade = false;
 
@@ -255,99 +255,100 @@ class _EditPerfilSupervisorState extends State<EditPerfilSupervisor> {
                             isEnabled: false,
                             isVisible: true,
                           ), */
-                          FutureBuilder<Map<String, String>>(
-                              future: getUserModifiedLocation(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const CircularProgressIndicator();
-                                } else if (snapshot.hasError) {
-                                  return Text('Error: ${snapshot.error}');
-                                } else {
-                                  final locationData = snapshot.data!;
-                                  final calle = locationData['street'];
-                                  final localidad = locationData['locality'];
-                                  final pais = locationData['country'];
-                                  return Column(
-                                    children: [
-                                      /*hidden lat and long*/
-                                      const SizedBox(height: 10),
-                                      MyTextField(
-                                        controller: latController,
-                                        text: 'Latitud',
-                                        hintText: 'Latitud',
-                                        obscureText: false,
-                                        isEnabled: false,
-                                        isVisible: false,
-                                      ),
-                                      const SizedBox(height: 10),
-                                      MyTextField(
-                                        controller: longController,
-                                        text: 'Longitud',
-                                        hintText: 'Longitud',
-                                        obscureText: false,
-                                        isEnabled: false,
-                                        isVisible: false,
-                                      ),
-                                      /*hidden lat and long*/
-                                      const SizedBox(height: 10),
-                                      Text('Calle: $calle'),
-                                      Text('Localidad: $localidad'),
-                                      Text('Pais: $pais'),
-                                    ],
-                                  );
-                                }
-                              }),
-                          const SizedBox(height: 10),
+                          // FutureBuilder<Map<String, String>>(
+                          //     future: getUserModifiedLocation(),
+                          //     builder: (context, snapshot) {
+                          //       if (snapshot.connectionState ==
+                          //           ConnectionState.waiting) {
+                          //         return const CircularProgressIndicator();
+                          //       } else if (snapshot.hasError) {
+                          //         return Text('Error: ${snapshot.error}');
+                          //       } else {
+                          //         final locationData = snapshot.data!;
+                          //         final calle = locationData['street'];
+                          //         final localidad = locationData['locality'];
+                          //         final pais = locationData['country'];
+                          //         return Column(
+                          //           children: [
+                          //             /*hidden lat and long*/
+                          //             const SizedBox(height: 10),
+                          //             MyTextField(
+                          //               controller: latController,
+                          //               text: 'Latitud',
+                          //               hintText: 'Latitud',
+                          //               obscureText: false,
+                          //               isEnabled: false,
+                          //               isVisible: false,
+                          //             ),
+                          //             const SizedBox(height: 10),
+                          //             MyTextField(
+                          //               controller: longController,
+                          //               text: 'Longitud',
+                          //               hintText: 'Longitud',
+                          //               obscureText: false,
+                          //               isEnabled: false,
+                          //               isVisible: false,
+                          //             ),
+                          //             /*hidden lat and long*/
+                          //             const SizedBox(height: 10),
+                          //             Text('Calle: $calle'),
+                          //             Text('Localidad: $localidad'),
+                          //             Text('Pais: $pais'),
+                          //           ],
+                          //         );
+                          //       }
+                          //     }
+                          //   ),
+                          // const SizedBox(height: 10),
                           //seleccionar ubicacion
 
-                          ElevatedButton(
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(
-                                  const Color.fromRGBO(248, 181, 149, 1)),
-                            ),
-                            onPressed: () async {
-                              controlVentanRefres = true;
-                              final selectedLocation =
-                                  await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return const CurrentLocationScreen();
-                                  },
-                                ),
-                              );
-                              if (selectedLocation != null &&
-                                  selectedLocation is Map<String, double>) {
-                                setState(() {
-                                  lat = selectedLocation['latitude']!;
-                                  long = selectedLocation['longitude']!;
-                                });
-                                final locationData =
-                                    await getUserModifiedLocation();
-                                final calle = locationData['street'];
-                                final localidad = locationData['locality'];
-                                final pais = locationData['country'];
-                                latController.text = lat.toString();
-                                longController.text = long.toString();
-                                print(
-                                    'latController.text_________${latController.text}');
-                                print(
-                                    'longController.text_________________${longController.text}');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Column(children: [
-                                      Text('Calle: $calle'),
-                                      Text('Localidad: $localidad'),
-                                      Text('Pais: $pais'),
-                                    ]),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                                // changesMade = true;
-                              }
-                            },
-                            child: const Text('Seleccionar Ubicación'),
-                          ),
+                          // ElevatedButton(
+                          //   style: ButtonStyle(
+                          //     backgroundColor: MaterialStateProperty.all(
+                          //         const Color.fromRGBO(248, 181, 149, 1)),
+                          //   ),
+                          //   onPressed: () async {
+                          //     controlVentanRefres = true;
+                          //     final selectedLocation =
+                          //         await Navigator.of(context).push(
+                          //       MaterialPageRoute(
+                          //         builder: (context) {
+                          //           return const CurrentLocationScreen();
+                          //         },
+                          //       ),
+                          //     );
+                          //     if (selectedLocation != null &&
+                          //         selectedLocation is Map<String, double>) {
+                          //       setState(() {
+                          //         lat = selectedLocation['latitude']!;
+                          //         long = selectedLocation['longitude']!;
+                          //       });
+                          //       final locationData =
+                          //           await getUserModifiedLocation();
+                          //       final calle = locationData['street'];
+                          //       final localidad = locationData['locality'];
+                          //       final pais = locationData['country'];
+                          //       latController.text = lat.toString();
+                          //       longController.text = long.toString();
+                          //       print(
+                          //           'latController.text_________${latController.text}');
+                          //       print(
+                          //           'longController.text_________________${longController.text}');
+                          //       ScaffoldMessenger.of(context).showSnackBar(
+                          //         SnackBar(
+                          //           content: Column(children: [
+                          //             Text('Calle: $calle'),
+                          //             Text('Localidad: $localidad'),
+                          //             Text('Pais: $pais'),
+                          //           ]),
+                          //           backgroundColor: Colors.green,
+                          //         ),
+                          //       );
+                          //       // changesMade = true;
+                          //     }
+                          //   },
+                          //   child: const Text('Seleccionar Ubicación'),
+                          // ),
                           const SizedBox(height: 15),
                           MyPhoneKeyboard(
                             controller: phoneController,
