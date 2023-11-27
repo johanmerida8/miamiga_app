@@ -19,7 +19,7 @@ class ScreenSupervisor extends StatefulWidget {
 
 class _ScreenSupervisorState extends State<ScreenSupervisor> {
   final User? user = FirebaseAuth.instance.currentUser;
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
   late List<Widget> _screens;
 
   void signUserOut(BuildContext context) {
@@ -31,8 +31,9 @@ class _ScreenSupervisorState extends State<ScreenSupervisor> {
     super.initState();
 
     _screens = [
-      CasePage(item: user!.uid),
-      ReadCases(user: user!, incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0, long: 0, imageUrl: '', audioUrl: ''), denuncianteData: DenuncianteData(ci: 1, fullName: '', phone: 1, lat: 0, long: 0)),
+      CasePage(item: user!.uid, user: user!),
+      ReadCases(user: user!, incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0, long: 0, imageUrls: [], audioUrl: ''), 
+      denuncianteData: DenuncianteData(ci: 1, fullName: '', phone: 1, lat: 0, long: 0, documentId: '', estado: '')),
       PerfilSupervisor(user: user!),
     ];
   }

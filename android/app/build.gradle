@@ -45,18 +45,25 @@ android {
         applicationId "com.example.miamiga_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion 20
+        minSdkVersion 21
         targetSdkVersion 30
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
     }
+    
+    signingConfigs {
+        release {
+            keyAlias 'key'
+            keyPassword 'Miamiga2023'
+            storeFile file('D:/GIT/Backup/miamiga_app/my-release-key.jks')
+            storePassword 'key'
+        }
+    }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
 }

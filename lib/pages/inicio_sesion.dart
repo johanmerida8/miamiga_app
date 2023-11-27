@@ -8,12 +8,9 @@ import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/square_tile.dart';
 import 'package:miamiga_app/pages/restablecer_contrase%C3%B1a.dart';
-import 'package:miamiga_app/pages/ventanas_usuario.dart';
-import 'package:miamiga_app/pages/ventanas_supervisor.dart';
 import 'package:miamiga_app/services/auth_services.dart';
 
 class IniciarSesion extends StatefulWidget {
-
   final Function()? onTap;
   const IniciarSesion({
     super.key,
@@ -35,44 +32,40 @@ class _IniciarSesionState extends State<IniciarSesion> {
     'wrong-password': 'Correo electrónico y Contraseña inválido',
   };
 
-
   //sign in method
-  void signInUser() async{
-
+  void signInUser() async {
     //mostrar un carga de inicio
     showDialog(
-      context: context, 
+      context: context,
       builder: (context) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    },
-  );
+        return const Center(
+          child: CircularProgressIndicator(
+            color: Color.fromRGBO(255, 87, 110, 1),
+          )
+        );
+      },
+    );
 
     try {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text, 
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text,
         password: passwordController.text,
       );
-      
+
       //manejar el rol del usuario
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await fetchUserRole(user.uid);
-        Navigator.pop(context); //quitar el dialogo de carga
+        // Navigator.pop(context); //quitar el dialogo de carga
 
         if (role == 'Supervisor') {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const ScreenSupervisor(),
-            ),
-          );
-        } else if (role == 'Usuario Normal'){
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const Screens(),
-            ),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/screens_supervisor');
+          });
+        } else if (role == 'Usuario Normal') {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/screens_usuario');
+          });
         }
       } else {
         Navigator.pop(context);
@@ -83,9 +76,13 @@ class _IniciarSesionState extends State<IniciarSesion> {
       Navigator.pop(context);
       //mostar mensaje de error
       showErrorMsg(e.code);
+    } catch (e) {
+      //quitar el dialogo de carga
+      Navigator.pop(context);
+      //mostar mensaje de error
+      showErrorMsg(e.toString());
     }
   }
-
 
   //fetch user role
   Future<String?> fetchUserRole(String userId) async {
@@ -104,11 +101,11 @@ class _IniciarSesionState extends State<IniciarSesion> {
     return null;
   }
 
+  void showErrorMsg(String errorCode) {
+    String errorMessage =
+        errorMessages[errorCode] ?? 'Porfavor llene los campos';
 
-    void showErrorMsg(String errorCode) {
-      String errorMessage = errorMessages[errorCode] ?? 'Porfavor llene los campos';
-
-      final snackBar = SnackBar(
+    final snackBar = SnackBar(
       content: Text(
         errorMessage,
         style: const TextStyle(
@@ -120,12 +117,8 @@ class _IniciarSesionState extends State<IniciarSesion> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  
-
   //no se interfiere cuando se hace un hot reload
   bool isFirstRun = true;
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -138,15 +131,15 @@ class _IniciarSesionState extends State<IniciarSesion> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 25),
-              
+
               const Header(
                 header: 'Iniciar Sesion',
               ),
 
               const SizedBox(height: 25),
-              
+
               //campo usuario
-              
+
               MyTextField(
                 controller: emailController,
                 text: 'Correo Electrónico',
@@ -168,7 +161,7 @@ class _IniciarSesionState extends State<IniciarSesion> {
                 isEnabled: true,
                 isVisible: true,
               ),
-              
+
               const SizedBox(height: 10),
 
               //restablecer contrasena
@@ -180,11 +173,11 @@ class _IniciarSesionState extends State<IniciarSesion> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) {
                             return const ResetPassword();
-                          }
-                          ),
+                          }),
                         );
                       },
                       child: const Text(
@@ -207,7 +200,7 @@ class _IniciarSesionState extends State<IniciarSesion> {
                 text: 'Iniciar Sesion',
                 onTap: signInUser,
               ),
-              
+
               const SizedBox(height: 50),
 
               //o continuar con
@@ -222,7 +215,6 @@ class _IniciarSesionState extends State<IniciarSesion> {
                         color: Colors.grey[400],
                       ),
                     ),
-              
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10.0),
                       child: Text(
@@ -232,7 +224,6 @@ class _IniciarSesionState extends State<IniciarSesion> {
                         ),
                       ),
                     ),
-              
                     Expanded(
                       child: Divider(
                         thickness: 0.5,
@@ -242,21 +233,20 @@ class _IniciarSesionState extends State<IniciarSesion> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 50),
 
-              //google 
+              //google
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   //google button
                   SquareTile(
-                    imgPath: 'lib/images/google.png',
-                    onTap: () {
-                      final authService = AuthService(context: context);
-                      authService.signInWithGoogle();
-                    }
-                  ),
+                      imgPath: 'lib/images/google.png',
+                      onTap: () {
+                        final authService = AuthService(context: context);
+                        authService.signInWithGoogle();
+                      }),
                 ],
               ),
 
@@ -278,7 +268,7 @@ class _IniciarSesionState extends State<IniciarSesion> {
                     child: const Text(
                       'Registrate',
                       style: TextStyle(
-                        color: Color.fromRGBO(108, 91, 124, 1), 
+                        color: Color.fromRGBO(108, 91, 124, 1),
                         fontWeight: FontWeight.bold,
                       ),
                     ),

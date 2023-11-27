@@ -6,7 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 final FirebaseStorage _storage = FirebaseStorage.instance;
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-class StoreData {
+class StoreDataAudio {
   Future<String> uploadImageToStorage(String childName, Uint8List file) async {
     Reference ref = _storage.ref().child(childName);
     UploadTask uploadTask = ref.putData(file);
@@ -21,11 +21,11 @@ class StoreData {
   }) async {
     String res = "Se occurio un error";
     try {
-      String folderPath = 'PerfilUsuarios/$userId/';
-      String imageUrl = await uploadImageToStorage(
+      String folderPath = 'Audios/';
+      String audioUrl = await uploadImageToStorage(
           '$folderPath${DateTime.now().millisecondsSinceEpoch}', file);
-      await _firestore.collection('imageUser').doc(userId).set({
-        'imageUrl': imageUrl,
+      await _firestore.collection('caseAudio').doc(userId).set({
+        'audioCase': audioUrl,
         'id': userId,
       });
     } catch (e) {

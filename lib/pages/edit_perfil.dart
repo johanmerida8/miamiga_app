@@ -8,6 +8,7 @@ import 'package:location/location.dart';
 import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
+import 'package:miamiga_app/components/phoneKeyboard.dart';
 import 'package:miamiga_app/pages/map.dart';
 
 class EditPerfil extends StatefulWidget {
@@ -23,74 +24,135 @@ class EditPerfil extends StatefulWidget {
 }
 
 class _EditPerfilState extends State<EditPerfil> {
-
   late LocationData modifiedLocation;
 
+  // final ciController = TextEditingController();
   final fullnameController = TextEditingController();
   final phoneController = TextEditingController();
   final latController = TextEditingController();
   final longController = TextEditingController();
-  
-  final CollectionReference _registration = 
-        FirebaseFirestore.instance.collection('users');
+
+  bool controlVentanaRefresh = false;
+
+  final CollectionReference _registration =
+      FirebaseFirestore.instance.collection('users');
 
   //update operation
-  Future<void> _updateData(String userId, String fullName, int phone, double lat, double long) async {
-  try {
-    // Get a reference to the Firestore collection
-    final DocumentReference userDocument = _registration.doc(userId);
+  Future<bool> _updateData(String userId, String fullName, int phone,
+      double lat, double long) async {
+    try {
+      // Get a reference to the Firestore collection
+      final DocumentReference userDocument = _registration.doc(userId);
 
-    //ver si los datos han sido modificados
-    final DocumentSnapshot currentData = await userDocument.get();
-    final Map<String, dynamic> currentValues = currentData.data() as Map<String, dynamic>;
+      // Check if the data has been modified
+      final DocumentSnapshot currentData = await userDocument.get();
+      print('current_______$currentData');
+      print('userId_________$userId');
+      print('fullName_________$fullName');
+      print('phone_________$phone');
+      print('lat_________$lat');
+      print('long_________________$long');
+      final Map<String, dynamic> currentValues =
+          currentData.data() as Map<String, dynamic>;
+      print('currentValues_________________$currentValues');
 
-    if (currentValues['fullname'] != fullName && 
-    currentValues['phone'] != phone && 
-    currentValues['lat'] != lat && 
-    currentValues['long'] != long)  {
-      //no se han realizado cambios
+      if (currentValues['fullname'] == null ||
+          currentValues['phone'] == null ||
+          currentValues['lat'] == null ||
+          currentValues['long'] == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Complete tu perfil antes de actualizar'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return false;
+        }
+
+      if (currentValues['fullname'] == fullName &&
+          currentValues['phone'] == phone &&
+          currentValues['lat'] == lat &&
+          currentValues['long'] == long) {
+        // No changes were made
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se han realizado cambios.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return false; // No changes were made
+      } else {
+        // Changes were made, update the data
+        await userDocument.update({
+          'fullname': fullName,
+          'phone': phone,
+          'lat': lat,
+          'long': long,
+        });
+        controlVentanaRefresh = false;
+        _fetchData();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Datos actualizados exitosamente!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        print('Actualizado exitoso de datos!');
+        return true; // Changes were made
+      }
+    } catch (e) {
+      print('Error actualizando datos: $e');
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se han realizado cambios.'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
+        SnackBar(
+          content: Text('Error actualizando datos: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
         ),
       );
-      return;
-    } else {
-      changesMade = true;
-      // Update the document with the specified userId
-      await userDocument.update({
-        'fullname': fullName,
-        'phone': phone,
-        'lat': lat,
-        'long': long,
-      });
+      return false; // An error occurred
     }
-
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Datos actualizados exitosamente!'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 3),
-      ),
-    );
-
-    print('Actualizado exitoso de datos!');
-
-  } catch (e) {
-    print('Error actualizando datos: $e');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error actualizando datos: $e'),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
-}
+
+//   Future<bool> _isProfileComplete(String userId) async {
+//   try {
+//     // Get a reference to the Firestore collection
+//     final DocumentReference userDocument = _registration.doc(userId);
+
+//     // Fetch user data
+//     final DocumentSnapshot documentSnapshot = await userDocument.get();
+
+//     // Check if the document exists
+//     if (documentSnapshot.exists) {
+//       final Map<String, dynamic> userData =
+//           documentSnapshot.data() as Map<String, dynamic>;
+
+//       // Check if required fields are not null
+//       if (userData['fullname'] != null &&
+//           userData['phone'] != null &&
+//           userData['lat'] != null &&
+//           userData['long'] != null) {
+//         return true; // Profile is complete
+//       } else {
+//         return false; // Profile is incomplete
+//       }
+//     } else {
+//       // Handle the case where the document doesn't exist
+//       print("No existe el documento.");
+//       return false; // Profile is incomplete
+//     }
+//   } catch (e) {
+//     // Handle any other errors that may occur during data retrieval
+//     print("Error en obtener datos: $e");
+//     return false; // Profile is incomplete
+//   }
+// }
+
 
   double lat = 0.0;
   double long = 0.0;
@@ -99,22 +161,23 @@ class _EditPerfilState extends State<EditPerfil> {
   Future<void> _fetchData() async {
     try {
       // Check if widget.user is not null before proceeding
-      if (widget.user != null) {
+      if (widget.user != null && controlVentanaRefresh != true) {
         final DocumentSnapshot documentSnapshot =
             await _registration.doc(widget.user!.uid).get();
 
         // Check if the document exists
         if (documentSnapshot.exists) {
+          // ciController.text = documentSnapshot['ci'].toString();
           fullnameController.text = documentSnapshot['fullname'];
           phoneController.text = documentSnapshot['phone'].toString();
-          // double latitude = documentSnapshot['lat'] as double;
-          // double longitude = documentSnapshot['long'] as double;
+          double latitude = documentSnapshot['lat'] as double;
+          double longitude = documentSnapshot['long'] as double;
 
-          // lat = latitude;
-          // long = longitude;
+          lat = latitude;
+          long = longitude;
 
           // final List<Placemark> placemarks = await placemarkFromCoordinates(
-          //   latitude, 
+          //   latitude,
           //   longitude
           // );
 
@@ -146,7 +209,7 @@ class _EditPerfilState extends State<EditPerfil> {
   @override
   void initState() {
     super.initState();
-    _fetchData(); 
+    _fetchData();
   }
 
   Future<Map<String, String>> getUserModifiedLocation() async {
@@ -163,9 +226,8 @@ class _EditPerfilState extends State<EditPerfil> {
         final String localidad = placemark.locality ?? '';
         final String pais = placemark.country ?? '';
 
-        final String fullStreet = avenida.isNotEmpty
-          ? '$calle, $avenida'
-          : calle;
+        final String fullStreet =
+            avenida.isNotEmpty ? '$calle, $avenida' : calle;
 
         return {
           'street': fullStreet,
@@ -202,190 +264,205 @@ class _EditPerfilState extends State<EditPerfil> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 15),
-   
-                  Row(
-                    children: [
-                      const Header(
-                        header: 'Editar Perfil',
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ],
+              Row(
+                children: [
+                  const Header(
+                    header: 'Editar Perfil',
                   ),
-
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
               FutureBuilder(
-                future: _fetchData(), 
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  } else if (snapshot.hasError) {
-                    return Text ('Error: ${snapshot.error}');
-                  } else {
-                    return Column(
-                      children: [
-                        const SizedBox(height: 25),
-                        MyTextField(
-                          controller: fullnameController,
-                          text: 'Nombre Completo',
-                          hintText: 'Nombre Completo',
-                          obscureText: false,
-                          isEnabled: true,
-                          isVisible: true,
+                  future: _fetchData(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color.fromRGBO(255, 87, 110, 1),
                         ),
-                        /* const SizedBox(height: 15),
-                        MyTextField(
-                          controller: locationController,
-                          hintText: 'Ubicación',
-                          obscureText: false,
-                          isEnabled: false,
-                          isVisible: true,
-                        ), */
-                        FutureBuilder<Map<String, String>>(
-                          future: getUserModifiedLocation(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const CircularProgressIndicator();
-                            } else if (snapshot.hasError) {
-                              return Text ('Error: ${snapshot.error}');
-                            } else {
-                              final locationData = snapshot.data!;
-                              final calle = locationData['street'];
-                              final localidad = locationData['locality'];
-                              final pais = locationData['country'];
-                              return Column(
-                                children: [
-                                  /*hidden lat and long*/
-                                  const SizedBox(height: 10),
-                                  MyTextField(
-                                    controller: latController,
-                                    text: 'Latitud',
-                                    hintText: 'Latitud',
-                                    obscureText: false,
-                                    isEnabled: false,
-                                    isVisible: false,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  MyTextField(
-                                    controller: longController,
-                                    text: 'Longitud',
-                                    hintText: 'Longitud',
-                                    obscureText: false,
-                                    isEnabled: false,
-                                    isVisible: false,
-                                  ),
-                                  /*hidden lat and long*/
-                                  const SizedBox(height: 10),
-                                  Text('Calle: $calle'),
-                                  Text('Localidad: $localidad'),
-                                  Text('Pais: $pais'),
-                                ],
-                              );
-                            }
-                          }
-                        ),
-                        const SizedBox(height: 10),
-                        //seleccionar ubicacion
-
-                        ElevatedButton(
-                        style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all(const Color.fromRGBO(248, 181, 149, 1)),
+                      );
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 25),
+                          MyTextField(
+                            controller: fullnameController,
+                            text: 'Nombre Completo',
+                            hintText: 'Nombre Completo',
+                            obscureText: false,
+                            isEnabled: true,
+                            isVisible: true,
                           ),
-                          onPressed: () async {
-                            final selectedLocation = await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return const CurrentLocationScreen();
-                                },
-                              ),
-                            );
-                            if (selectedLocation != null && selectedLocation is Map<String, double>) {
-                              setState(() {
-                                lat = selectedLocation['latitude']!;
-                                long = selectedLocation['longitude']!;
-                              });
-                              final locationData = await getUserModifiedLocation();
-                              final calle = locationData['street'];
-                              final localidad = locationData['locality'];
-                              final pais = locationData['country'];
-                              latController.text = lat.toString();
-                              longController.text = long.toString();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Column(
+                          FutureBuilder<Map<String, String>>(
+                              future: getUserModifiedLocation(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const CircularProgressIndicator(
+                                    color: Color.fromRGBO(255, 87, 110, 1),
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                } else {
+                                  final locationData = snapshot.data!;
+                                  final calle = locationData['street'];
+                                  final localidad = locationData['locality'];
+                                  final pais = locationData['country'];
+                                  return Column(
                                     children: [
+                                      /*hidden lat and long*/
+                                      const SizedBox(height: 10),
+                                      MyTextField(
+                                        controller: latController,
+                                        text: 'Latitud',
+                                        hintText: 'Latitud',
+                                        obscureText: false,
+                                        isEnabled: false,
+                                        isVisible: false,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      MyTextField(
+                                        controller: longController,
+                                        text: 'Longitud',
+                                        hintText: 'Longitud',
+                                        obscureText: false,
+                                        isEnabled: false,
+                                        isVisible: false,
+                                      ),
+                                      /*hidden lat and long*/
+                                      const SizedBox(height: 10),
                                       Text('Calle: $calle'),
                                       Text('Localidad: $localidad'),
                                       Text('Pais: $pais'),
-                                    ]
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                              changesMade = true;
-                            }
-                          }, 
-                          child: const Text('Seleccionar Ubicacion'),
-                        ),
-                        const SizedBox(height: 15),
-                        MyTextField(
-                          controller: phoneController,
-                          text: 'Telefono',
-                          hintText: 'Telefono',
-                          obscureText: false,
-                          isEnabled: true,
-                          isVisible: true,
-                        ),
-
-                        const SizedBox(height: 25),
-
-                        MyImportantBtn(
-                          onTap: () async{
-                            _updateData(
-                              widget.user!.uid, 
-                              fullnameController.text,  
-                              int.parse(phoneController.text),
-                              double.parse(latController.text),
-                              double.parse(longController.text),
-                            );
-
-                            if (changesMade) {
-                              showDialog(
-                                context: context, 
-                                barrierDismissible: false,
-                                builder: (BuildContext context) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
+                                    ],
                                   );
                                 }
-                              );
-                            }
+                              }),
+                          const SizedBox(height: 10),
+                          //seleccionar ubicacion
 
-                            await _updateData(
-                              widget.user!.uid, 
-                              fullnameController.text,  
-                              int.parse(phoneController.text),
-                              double.parse(latController.text),
-                              double.parse(longController.text),
-                            );
-                            if (changesMade) {
-                              //si se realizaron cambios cerramos el dialogo
-                              Navigator.of(context).pop();
-                            }
-                          }, 
-                          text: 'Actualizar'
-                        ),
-                      ],
-                    );
+                          ElevatedButton(
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(
+                                  const Color.fromRGBO(248, 181, 149, 1)),
+                            ),
+                            onPressed: () async {
+                              controlVentanaRefresh = true;
+                              final selectedLocation =
+                                  await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return const CurrentLocationScreen();
+                                  },
+                                ),
+                              );
+                              if (selectedLocation != null &&
+                                  selectedLocation is Map<String, double>) {
+                                setState(() {
+                                  lat = selectedLocation['latitude']!;
+                                  long = selectedLocation['longitude']!;
+                                });
+                                final locationData =
+                                    await getUserModifiedLocation();
+                                final calle = locationData['street'];
+                                final localidad = locationData['locality'];
+                                final pais = locationData['country'];
+                                latController.text = lat.toString();
+                                longController.text = long.toString();
+                                print(
+                                    'latController.text_________${latController.text}');
+                                print(
+                                    'longController.text_________________${longController.text}');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Column(children: [
+                                      Text('Calle: $calle'),
+                                      Text('Localidad: $localidad'),
+                                      Text('Pais: $pais'),
+                                    ]),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                // changesMade = true;
+                              }
+                            },
+                            child: const Text('Seleccionar Ubicación'),
+                          ),
+                          const SizedBox(height: 15),
+                          MyPhoneKeyboard(
+                            controller: phoneController,
+                            text: 'Telefono',
+                            hintText: 'Telefono',
+                            obscureText: false,
+                            isEnabled: true,
+                            isVisible: true,
+                          ),
+
+                          const SizedBox(height: 25),
+
+                          MyImportantBtn(
+                            onTap: () async {
+                              try {
+                                // if (changesMade) {
+                                showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (BuildContext context) {
+                                      return const Center(
+                                        child: CircularProgressIndicator(
+                                          color: Color.fromRGBO(255, 87, 110, 1),
+                                        ),
+                                      );
+                                    });
+                                
+                                bool changesMade = await _updateData(
+                                  widget.user!.uid,
+                                  fullnameController.text,
+                                  int.parse(phoneController.text),
+                                  double.parse(lat.toString()),
+                                  double.parse(long.toString()),
+                                );
+
+                                if (changesMade) {
+                                  Navigator.pushReplacementNamed(context, '/screens_usuario');
+                                } else {
+                                  Navigator.pop(context); // Close the progress dialog
+                                }
+
+                                // bool profileComplete = await _isProfileComplete(widget.user!.uid);
+
+                                // if (profileComplete) {
+                                //   Navigator.pushReplacementNamed(context, '/screens_usuario');
+                                // } else {
+                                //   ScaffoldMessenger.of(context).showSnackBar(
+                                //     const SnackBar(
+                                //       content: Text('Complete su perfil antes de actualizar'),
+                                //       backgroundColor: Colors.red,
+                                //       duration: Duration(seconds: 3),
+                                //     ),
+                                //   );
+                                // }
+
+                              } catch (e) {
+                                print('Error parsing double: $e');
+                                // Handle the error, e.g. by showing an error message to the user
+                              }
+                            },
+                            text: 'Actualizar'
+                          ),
+                        ],
+                      );
+                    }
                   }
-                }
-              ),
+                ),
             ],
           ),
         ),
