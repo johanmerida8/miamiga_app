@@ -56,28 +56,6 @@ class _AlertaScreenState extends State<AlertaScreen> {
     Navigator.of(context).pop(widget.incidentData);
   }
 
-//   void editarDenuncia() async {
-//   final result = await Navigator.of(context).push(
-//     MaterialPageRoute(
-//       builder: (context) => DenunciaIncidente(
-//         user: widget.user, 
-//         incidentData: widget.incidentData, 
-//         denuncianteData: widget.denuncianteData
-//       ), 
-//     ),
-//   );
-
-//   // Handle the result returned from DenunciaIncidente
-//   if (result != null) {
-//     // Update your data based on the result if needed
-//     print('Result from DenunciaIncidente: $result');
-//     _saveAndGoBack();
-//   } else {
-//     // User canceled, handle accordingly
-//     print('User canceled the operation');
-//   }
-// }
-
   void alert() async {
     Future<void>? createCaseFuture;
 
@@ -151,6 +129,22 @@ class _AlertaScreenState extends State<AlertaScreen> {
     }
   }
 
+  Future<String> fetchCaseData(String? userId) async {
+      if (userId == null) {
+        throw Exception('User ID is null');
+      }
+
+      final querySnapshot = await FirebaseFirestore.instance
+      .collection('alert')
+      .where('user', isEqualTo: userId)
+      .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        return 'No hay alertas';
+      }
+
+      return querySnapshot.docs.first.id;
+    }
   
   Future<void> createCase(User? user, DenuncianteData denuncianteData, IncidentData incidentData) async {
 
@@ -158,6 +152,8 @@ class _AlertaScreenState extends State<AlertaScreen> {
       List<File> imageFiles = incidentData.imageUrls.map((e) => File(e)).toList();
       List<String> imageUrls = await uploadImageFile(user!.uid, imageFiles);
       String audioUrl = await uploadAudioFile(user.uid, File(incidentData.audioUrl));
+
+      String alert = await fetchCaseData(user.uid);
 
       //i want to create the document of my case
 
@@ -184,10 +180,9 @@ class _AlertaScreenState extends State<AlertaScreen> {
           'imageUrl': imageUrls,
           'audioUrl': audioUrl,
         },
-
+        'alert': alert,
         'estado': 'pendiente',
         'fecha': DateTime.now(),
-        'supervisor': '',
         'user': user.uid,
       });
 

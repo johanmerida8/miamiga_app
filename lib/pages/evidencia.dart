@@ -12,6 +12,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/limit_characters.dart';
+import 'package:miamiga_app/components/limit_characters_second.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/row_button.dart';
@@ -42,6 +43,7 @@ class _CasePageState extends State<CasePage> {
   final dateController = TextEditingController();
   final latController = TextEditingController();
   final longController = TextEditingController();
+  final conclusionController = TextEditingController();
 
   List<XFile> pickedImages = [];
   List<File> pickedDocument = [];
@@ -59,12 +61,12 @@ class _CasePageState extends State<CasePage> {
   bool isImageReceived = false;
   bool isMediaReceived = false;
 
-  Future<List<String>> uploadImageFile(List<File> files) async {
+  Future<List<String>> uploadImageFile(String caseId, List<File> files) async {
     List<String> downloadUrls = [];
     for (File file in files) {
       String fileName = Path.basename(file.path);
       Reference ref =
-          FirebaseStorage.instance.ref().child('EvidenceImages/$fileName');
+          FirebaseStorage.instance.ref().child('EvidenceImages/$caseId/$fileName');
       UploadTask uploadTask = ref.putFile(file);
       TaskSnapshot taskSnapshot = await uploadTask;
       final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
@@ -73,23 +75,23 @@ class _CasePageState extends State<CasePage> {
     return downloadUrls;
   }
 
-  Future<String> uploadAudioFile(File file) async {
+  Future<String> uploadAudioFile(String caseId, File file) async {
     String fileName = Path.basename(file.path);
     Reference ref =
-        FirebaseStorage.instance.ref().child('EvidenceAudios/$fileName');
+        FirebaseStorage.instance.ref().child('EvidenceAudios/$caseId/$fileName');
     UploadTask uploadTask = ref.putFile(file);
     TaskSnapshot taskSnapshot = await uploadTask;
     final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
     return downloadUrl;
   }
 
-  Future<String> uploadDocumentFiles(File file) async {
+  Future<String> uploadDocumentFiles(String caseId, File file) async {
     String fileName = Path.basename(file.path);
     String extension = Path.extension(file.path).toLowerCase();
 
     if (extension == '.pdf' || extension == '.doc' || extension == '.docx') {
       Reference ref =
-          FirebaseStorage.instance.ref().child('EvidenceDocuments/$fileName');
+          FirebaseStorage.instance.ref().child('EvidenceDocuments/$caseId/$fileName');
       UploadTask uploadTask = ref.putFile(file);
       TaskSnapshot taskSnapshot = await uploadTask;
       final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
@@ -118,12 +120,27 @@ class _CasePageState extends State<CasePage> {
   }
 
   void cargarImagen() async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return ImageModal(
-          pickedImages: pickedImages,
-          onImagesSelected: () async {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return ImageModal(
+        pickedImages: pickedImages,
+        onImagesSelected: (ImageSource source) async {
+          if (source == ImageSource.camera) {
+            final result = await ImagePicker().pickImage(
+              source: ImageSource.camera,
+              maxWidth: double.infinity,
+              maxHeight: double.infinity,
+              imageQuality: 80,
+            );
+
+            List<XFile> newImages = [];
+            if (result != null) {
+              newImages.add(XFile(result.path));
+            }
+
+            return newImages;
+          } else {
             final result = await ImagePicker().pickMultiImage(
               maxWidth: double.infinity,
               maxHeight: double.infinity,
@@ -136,11 +153,12 @@ class _CasePageState extends State<CasePage> {
             }
 
             return newImages;
-          },
-        );
-      },
-    );
-  }
+          }
+        },
+      );
+    },
+  );
+}
 
   Future<void> selectDocumentFile() async {
     final result = await FilePicker.platform.pickFiles(
@@ -360,7 +378,8 @@ List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
           date == null ||
           lat == 0.0 ||
           long == 0.0 ||
-          _selectedName == null) {
+          _selectedName == null ||
+          conclusionController.text.trim().isEmpty) {
         Navigator.pop(context);
         showErrorMsg('Por favor llene todos los campos');
         return;
@@ -377,6 +396,7 @@ List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
           audioUrl: audioPath,
           documentUrl: pickedDocument.first.path,
           selectedUser: _selectedName!.documentId,
+          conclusion: conclusionController.text.trim(),
         ),
       );
 
@@ -396,6 +416,7 @@ List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
         pickedDocument.clear();
         pickedAudios.clear();
         desController.clear();
+        conclusionController.clear();
         dateController.clear();
         latController.clear();
         longController.clear();
@@ -414,10 +435,10 @@ List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
 
   Future<void> createUserDocument(EvidenceData evidenceData) async {
     List<File> imageFiles = evidenceData.imageUrls.map((e) => File(e)).toList();
-    List<String> imageUrls = await uploadImageFile(imageFiles);
-    String audioUrl = await uploadAudioFile(File(evidenceData.audioUrl));
+    List<String> imageUrls = await uploadImageFile(evidenceData.selectedUser, imageFiles);
+    String audioUrl = await uploadAudioFile(File(evidenceData.selectedUser).path, File(evidenceData.audioUrl));
     String documentUrl =
-        await uploadDocumentFiles(File(evidenceData.documentUrl));
+        await uploadDocumentFiles(File(evidenceData.selectedUser).path, File(evidenceData.documentUrl));
 
     try {
       DocumentReference docRef =
@@ -427,6 +448,7 @@ List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
         'audioUrl': audioUrl,
         'document': documentUrl,
         'descripcion': evidenceData.description,
+        'conclusion': evidenceData.conclusion,
         'fecha': evidenceData.date,
         'lat': evidenceData.lat,
         'long': evidenceData.long,
@@ -495,7 +517,7 @@ List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
               const Row(
                 children: [
                   Header(
-                    header: 'Datos de la Evidencia',
+                    header: 'Datos del Evidencia',
                   ),
                 ],
               ),
@@ -526,7 +548,7 @@ List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
                 ],
               ),
               const SizedBox(height: 30),
-              LimitCharacter(
+              LimitCharacterTwo(
                 controller: desController,
                 text: 'Descripción del Evidencia', // 'Descripción del Incidente
                 hintText: 'Descripción del Evidencia',
@@ -642,7 +664,8 @@ List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
                         ],
                       );
                     }
-                  }),
+                  }
+                ),
               const SizedBox(height: 15),
               ElevatedButton(
                 style: ButtonStyle(
@@ -684,12 +707,24 @@ List<DenuncianteData> _mapSnapshotToUserCase(QuerySnapshot snapshot) {
                 },
                 child: const Text('Seleccionar Ubicacion'),
               ),
+              const SizedBox(height: 15),
+              LimitCharacterTwo(
+                controller: conclusionController,
+                text: 'Conclusion Final', // 'Conclusiones del Incidente
+                hintText: 'Conclusiones Final',
+                obscureText: false,
+                isEnabled: true,
+                isVisible: true,
+              ),
+
               const SizedBox(height: 25),
               FutureBuilder<List<DenuncianteData>>(
                 future: _fetchData(), 
                 builder: (BuildContext context, AsyncSnapshot<List<DenuncianteData>> snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
+                    return const CircularProgressIndicator(
+                      color: Color.fromRGBO(255, 87, 110, 1),
+                    );
                   } else if (snapshot.hasError) {
                     return Text('Error: ${snapshot.error}');
                   } else {

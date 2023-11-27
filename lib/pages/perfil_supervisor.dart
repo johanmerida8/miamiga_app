@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
@@ -208,13 +207,23 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
           content: const Text("Quieres guardar la imagen?"),
           actions: <Widget>[
             TextButton(
-              child: const Text("Cancelar"),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: const Text("Guardar"),
+              child: const Text(
+                "Guardar",
+                style: TextStyle(
+                  color: Colors.red,
+                ),
+              ),
               onPressed: () {
                 saveProfileImage();
                 Navigator.of(context).pop();
@@ -352,7 +361,7 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
                           );
                         }
                       }),
-                  const SizedBox(height: 70),
+                  const SizedBox(height: 50),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 25.0),
                     child: Text(
@@ -362,6 +371,7 @@ class _PerfilSupervisorState extends State<PerfilSupervisor> {
                       style: const TextStyle(fontSize: 20),
                     ),
                   ),
+                  const SizedBox(height: 25),
                 ],
               ),
             ],

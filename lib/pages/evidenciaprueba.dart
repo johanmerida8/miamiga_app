@@ -14,8 +14,6 @@ import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/row_button.dart';
 import 'package:miamiga_app/pages/map.dart';
-import 'package:miamiga_app/pages/supervisor.dart';
-import 'package:audioplayers/audioplayers.dart';
 
 class CasePage extends StatefulWidget {
   final String item;

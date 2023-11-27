@@ -22,10 +22,10 @@ class StoreDataAudio {
     String res = "Se occurio un error";
     try {
       String folderPath = 'Audios/';
-      String imageUrl = await uploadImageToStorage(
+      String audioUrl = await uploadImageToStorage(
           '$folderPath${DateTime.now().millisecondsSinceEpoch}', file);
       await _firestore.collection('caseAudio').doc(userId).set({
-        'audioCase': imageUrl,
+        'audioCase': audioUrl,
         'id': userId,
       });
     } catch (e) {

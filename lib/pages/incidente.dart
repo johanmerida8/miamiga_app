@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/limit_characters.dart';
+import 'package:miamiga_app/components/limit_characters_second.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/row_button.dart';
@@ -164,12 +165,27 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
   }
 
   void cargarImagen() async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return ImageModal(
-          pickedImages: pickedImages,
-          onImagesSelected: () async {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return ImageModal(
+        pickedImages: pickedImages,
+        onImagesSelected: (ImageSource source) async {
+          if (source == ImageSource.camera) {
+            final result = await ImagePicker().pickImage(
+              source: ImageSource.camera,
+              maxWidth: double.infinity,
+              maxHeight: double.infinity,
+              imageQuality: 80,
+            );
+
+            List<XFile> newImages = [];
+            if (result != null) {
+              newImages.add(XFile(result.path));
+            }
+
+            return newImages;
+          } else {
             final result = await ImagePicker().pickMultiImage(
               maxWidth: double.infinity,
               maxHeight: double.infinity,
@@ -182,11 +198,12 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
             }
 
             return newImages;
-          },
-        );
-      },
-    );
-  }
+          }
+        },
+      );
+    },
+  );
+}
 
   Future<List<File>> pickAudio() async {
   print('pickAudio: selectedAudioPath: $pickedAudios');
@@ -230,7 +247,7 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
     }
   }
 
-  Future<void> cargarAudio() async {
+Future<void> cargarAudio() async {
   await showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -245,6 +262,7 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
             if (result != null) {
               newAudios.add(File(result.files.first.path!));
               audioPath = result.files.first.path ?? '';
+              print('Audio Path After Setting: $audioPath');
             }
           return newAudios;
         },
@@ -255,10 +273,10 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
 
   double lat = 0.0;
   double long = 0.0;
-  bool controlgetUserMofiedLocation = false;
+  bool controlgetUserModifiedLocation = false;
 
   Future<Map<String, String>> getUserModifiedLocation() async {
-    if (controlgetUserMofiedLocation != false) {
+    if (controlgetUserModifiedLocation != false) {
       try {
         final List<Placemark> placemarks = await placemarkFromCoordinates(
           lat,
@@ -376,10 +394,9 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
 
                   const SizedBox(height: 25),
 
-                  LimitCharacter(
+                  LimitCharacterTwo(
                     controller: desController,
-                    text:
-                        'Descripción del Incidente', // 'Descripción del Incidente
+                    text: 'Descripción del Incidente',
                     hintText: 'Descripción del Incidente',
                     obscureText: false,
                     isEnabled: true,
@@ -508,7 +525,7 @@ class _DenunciaIncidenteState extends State<DenunciaIncidente> {
                           const Color.fromRGBO(248, 181, 149, 1)),
                     ),
                     onPressed: () async {
-                      controlgetUserMofiedLocation = true;
+                      controlgetUserModifiedLocation = true;
                       final selectedLocation = await Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) {

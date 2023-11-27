@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -62,21 +64,23 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> with Widg
     }
 
     if (position != null) {
-      setState(() {
-        initialCameraPosition = CameraPosition(
-          target: LatLng(position!.latitude, position.longitude),
-          zoom: 14,
-        );
-        selectedLatLng = LatLng(position.latitude, position.longitude);
-        markers.clear();
-        markers.add(
-          Marker(
-            markerId: const MarkerId('currentLocation'),
-            position: selectedLatLng,
-            icon: BitmapDescriptor.defaultMarker,
-          ),
-        );
-      });
+      if (mounted) { // Check if the widget is still in the widget tree
+        setState(() {
+          initialCameraPosition = CameraPosition(
+            target: LatLng(position!.latitude, position.longitude),
+            zoom: 14,
+          );
+          selectedLatLng = LatLng(position.latitude, position.longitude);
+          markers.clear();
+          markers.add(
+            Marker(
+              markerId: const MarkerId('currentLocation'),
+              position: selectedLatLng,
+              icon: BitmapDescriptor.defaultMarker,
+            ),
+          );
+        });
+      }
     }
   }
 

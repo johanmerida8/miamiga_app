@@ -32,7 +32,7 @@ class _EditPerfilState extends State<EditPerfil> {
   final latController = TextEditingController();
   final longController = TextEditingController();
 
-  bool controlVentanRefres = false;
+  bool controlVentanaRefresh = false;
 
   final CollectionReference _registration =
       FirebaseFirestore.instance.collection('users');
@@ -56,6 +56,20 @@ class _EditPerfilState extends State<EditPerfil> {
           currentData.data() as Map<String, dynamic>;
       print('currentValues_________________$currentValues');
 
+      if (currentValues['fullname'] == null ||
+          currentValues['phone'] == null ||
+          currentValues['lat'] == null ||
+          currentValues['long'] == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Complete tu perfil antes de actualizar'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return false;
+        }
+
       if (currentValues['fullname'] == fullName &&
           currentValues['phone'] == phone &&
           currentValues['lat'] == lat &&
@@ -77,7 +91,7 @@ class _EditPerfilState extends State<EditPerfil> {
           'lat': lat,
           'long': long,
         });
-        controlVentanRefres = false;
+        controlVentanaRefresh = false;
         _fetchData();
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -105,6 +119,41 @@ class _EditPerfilState extends State<EditPerfil> {
     }
   }
 
+//   Future<bool> _isProfileComplete(String userId) async {
+//   try {
+//     // Get a reference to the Firestore collection
+//     final DocumentReference userDocument = _registration.doc(userId);
+
+//     // Fetch user data
+//     final DocumentSnapshot documentSnapshot = await userDocument.get();
+
+//     // Check if the document exists
+//     if (documentSnapshot.exists) {
+//       final Map<String, dynamic> userData =
+//           documentSnapshot.data() as Map<String, dynamic>;
+
+//       // Check if required fields are not null
+//       if (userData['fullname'] != null &&
+//           userData['phone'] != null &&
+//           userData['lat'] != null &&
+//           userData['long'] != null) {
+//         return true; // Profile is complete
+//       } else {
+//         return false; // Profile is incomplete
+//       }
+//     } else {
+//       // Handle the case where the document doesn't exist
+//       print("No existe el documento.");
+//       return false; // Profile is incomplete
+//     }
+//   } catch (e) {
+//     // Handle any other errors that may occur during data retrieval
+//     print("Error en obtener datos: $e");
+//     return false; // Profile is incomplete
+//   }
+// }
+
+
   double lat = 0.0;
   double long = 0.0;
   //i want to fetch data from firebase and show it in the textfields
@@ -112,7 +161,7 @@ class _EditPerfilState extends State<EditPerfil> {
   Future<void> _fetchData() async {
     try {
       // Check if widget.user is not null before proceeding
-      if (widget.user != null && controlVentanRefres != true) {
+      if (widget.user != null && controlVentanaRefresh != true) {
         final DocumentSnapshot documentSnapshot =
             await _registration.doc(widget.user!.uid).get();
 
@@ -203,7 +252,7 @@ class _EditPerfilState extends State<EditPerfil> {
     }
   }
 
-  // bool changesMade = false;
+  bool changesMade = false;
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +355,7 @@ class _EditPerfilState extends State<EditPerfil> {
                                   const Color.fromRGBO(248, 181, 149, 1)),
                             ),
                             onPressed: () async {
-                              controlVentanRefres = true;
+                              controlVentanaRefresh = true;
                               final selectedLocation =
                                   await Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -387,6 +436,21 @@ class _EditPerfilState extends State<EditPerfil> {
                                 } else {
                                   Navigator.pop(context); // Close the progress dialog
                                 }
+
+                                // bool profileComplete = await _isProfileComplete(widget.user!.uid);
+
+                                // if (profileComplete) {
+                                //   Navigator.pushReplacementNamed(context, '/screens_usuario');
+                                // } else {
+                                //   ScaffoldMessenger.of(context).showSnackBar(
+                                //     const SnackBar(
+                                //       content: Text('Complete su perfil antes de actualizar'),
+                                //       backgroundColor: Colors.red,
+                                //       duration: Duration(seconds: 3),
+                                //     ),
+                                //   );
+                                // }
+
                               } catch (e) {
                                 print('Error parsing double: $e');
                                 // Handle the error, e.g. by showing an error message to the user
@@ -397,7 +461,8 @@ class _EditPerfilState extends State<EditPerfil> {
                         ],
                       );
                     }
-                  }),
+                  }
+                ),
             ],
           ),
         ),

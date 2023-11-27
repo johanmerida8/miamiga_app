@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 class ImageModal extends StatefulWidget {
   final List<XFile> pickedImages;
-  final Future<List<XFile>> Function() onImagesSelected;
+  final Future<List<XFile>> Function(ImageSource source) onImagesSelected;
 
   const ImageModal({super.key, required this.pickedImages, required this.onImagesSelected});
 
@@ -26,16 +26,16 @@ class _ImageModalState extends State<ImageModal> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Padding(
-              padding: EdgeInsets.all(24.0),
-              child: Text(
-                'Seleccionar Imagen',
-                style: TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            // const Padding(
+            //   padding: EdgeInsets.all(24.0),
+            //   child: Text(
+            //     'Cargar',
+            //     style: TextStyle(
+            //       fontSize: 20.0,
+            //       fontWeight: FontWeight.bold,
+            //     ),
+            //   ),
+            // ),
             Expanded(
               child: PageView.builder(
                 itemCount: widget.pickedImages.length,
@@ -86,44 +86,57 @@ class _ImageModalState extends State<ImageModal> {
                 },
               ),
             ),
-            if (widget.pickedImages.isEmpty)
-              SizedBox(
-                width: 100,
-                height: 100,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    widget.onImagesSelected().then((List<XFile> newImages) {
-                      setState(() {
-                        widget.pickedImages.addAll(newImages);
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      widget.onImagesSelected(ImageSource.gallery).then((List<XFile> newImages) {
+                        setState(() {
+                          widget.pickedImages.addAll(newImages);
+                        });
                       });
-                    });
-                  },
-                  icon: const Icon(
-                    Icons.add_a_photo,
-                    size: 50,
-                  ),
-                  label: const SizedBox.shrink(),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.all(0),
-                    backgroundColor: const Color.fromRGBO(248, 181, 149, 1),
+                    },
+                    icon: const Icon(
+                      Icons.photo,
+                      size: 50,
+                    ),
+                    label: const SizedBox.shrink(),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(0),
+                      backgroundColor: const Color.fromRGBO(248, 181, 149, 1),
+                    ),
                   ),
                 ),
-              ),
-            if (widget.pickedImages.isNotEmpty)
-              ElevatedButton(
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
-                      const Color.fromRGBO(248, 181, 149, 1)),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      widget.onImagesSelected(ImageSource.camera).then((List<XFile> newImages) {
+                        setState(() {
+                          widget.pickedImages.addAll(newImages);
+                        });
+                      });
+                    },
+                    icon: const Icon(
+                      Icons.camera_alt,
+                      size: 50,
+                    ),
+                    label: const SizedBox.shrink(),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(0),
+                      backgroundColor: const Color.fromRGBO(248, 181, 149, 1),
+                    ),
+                  ),
                 ),
-                onPressed: () {
-                  widget.onImagesSelected().then((List<XFile> newImages) {
-                    setState(() {
-                      widget.pickedImages.addAll(newImages);
-                    });
-                  });
-                },
-                child: const Text('Agregar otra imagen'),
-              )
+              ],
+            ),
           ],
         ),
       ),

@@ -7,6 +7,7 @@ class EvidenceData {
   String audioUrl = '';
   String selectedUser;
   String documentUrl = '';
+  String conclusion;
 
   EvidenceData({
     required this.description,
@@ -17,5 +18,6 @@ class EvidenceData {
     required this.audioUrl,
     required this.selectedUser,
     required this.documentUrl,
+    required this.conclusion,
   });
 }

@@ -33,9 +33,24 @@ class MyApp extends StatelessWidget {
       routes: {
         '/':(context) => const SplashScreen(),
         '/auth':(context) => const AuthPage(),
-        '/inicio_o_registrar':(context) => const LoginOrRegister(),
-        '/screens_usuario':(context) => const Screens(),
-        '/screens_supervisor':(context) => const ScreenSupervisor(),
+        '/inicio_o_registrar':(context) => WillPopScope(
+          onWillPop: () async {
+            return false;
+          },
+          child: const LoginOrRegister(),
+        ),
+        '/screens_usuario': (context) => WillPopScope( 
+          onWillPop: () async {
+            return false;
+          },
+          child: const Screens(),
+        ),
+        '/screens_supervisor':(context) => WillPopScope(
+          onWillPop: () async {
+            return false;
+          },
+          child: const ScreenSupervisor(),
+        ),
         '/detalle_denuncia':(context) => DetalleDenuncia(
           user: FirebaseAuth.instance.currentUser,
           incidentData: IncidentData(description: '', date: DateTime.now(), lat: 0.0, long: 0.0, imageUrls: [], audioUrl: ''),

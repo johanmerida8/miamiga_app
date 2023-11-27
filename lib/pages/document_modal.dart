@@ -15,30 +15,34 @@ class DocumentModal extends StatefulWidget {
 }
 
 class _DocumentModalState extends State<DocumentModal> {
+
   @override
   Widget build(BuildContext context) {
+    String documentFileName = widget.pickedDocuments.isNotEmpty
+      ? widget.pickedDocuments.first.path.split('/').last
+      : '';
     return AlertDialog(
       content: SizedBox(
         width: 300,
-        height: 200,
+        height: 100,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Padding(
-              padding: EdgeInsets.all(24.0),
-              child: Text(
-                'Seleccionar Documento',
-                style: TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            // const Padding(
+            //   padding: EdgeInsets.all(24.0),
+            //   child: Text(
+            //     'Seleccionar Documento',
+            //     style: TextStyle(
+            //       fontSize: 20.0,
+            //       fontWeight: FontWeight.bold,
+            //     ),
+            //   ),
+            // ),
             Expanded(
               child: PageView.builder(
                 itemCount: widget.pickedDocuments.length,
                 itemBuilder: (context, index) {
-                  final document = widget.pickedDocuments[index];
+                  // final document = widget.pickedDocuments[index];
                   return GestureDetector(
                     onTap: () {
                       showDialog(
@@ -47,7 +51,7 @@ class _DocumentModalState extends State<DocumentModal> {
                           return AlertDialog(
                             content: SizedBox(
                               child: Text(
-                                'Documento: ${document.path}',
+                                'Nombre del Document: $documentFileName',
                               ),
                             ),
                           );
@@ -55,7 +59,7 @@ class _DocumentModalState extends State<DocumentModal> {
                       );
                     },
                     child: Text(
-                      'Documento: ${document.path}',
+                      'Nombre del Documento: $documentFileName',
                     ),
                   );
                 },

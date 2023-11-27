@@ -12,6 +12,7 @@ import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart';
 import 'package:miamiga_app/components/numberKeyboard.dart';
 import 'package:miamiga_app/components/phoneKeyboard.dart';
+import 'package:miamiga_app/model/datos_usuario_existe.dart';
 
 // ignore: unused_import
 import 'package:miamiga_app/pages/map.dart';
@@ -45,8 +46,6 @@ class _RegistroPageState extends State<RegistroPage> {
   final latController = TextEditingController();
   final longController = TextEditingController();
 
-  final _formKey = GlobalKey<FormState>();
-
   void signUserUp() async {
   showDialog(
     context: context,
@@ -73,6 +72,43 @@ class _RegistroPageState extends State<RegistroPage> {
       return;
     }
 
+    if (!isEmailValid(emailController.text)) {
+      Navigator.pop(context); //cerrar el dialogo en caso de error
+      showErrorMsg("Por favor, ingrese un correo valido");
+      return;
+    }
+
+    if (!isPasswordValid(passwordController.text)) {
+      Navigator.pop(context); //cerrar el dialogo en caso de error
+      showErrorMsg("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    if (!isFullNameValid(fullnameController.text.trim())) {
+      Navigator.pop(context); //cerrar el dialogo en caso de error
+      showErrorMsg("Por favor, ingrese un nombre valido");
+      return;
+    }
+
+    if (!isIdentityValid(identityController.text.trim())) {
+      Navigator.pop(context); //cerrar el dialogo en caso de error
+      showErrorMsg("Por favor, ingrese un carnet de identidad valido");
+      return;
+    }
+
+    if (!isPhoneValid(phoneController.text.trim())) {
+      Navigator.pop(context); //cerrar el dialogo en caso de error
+      showErrorMsg("Por favor, ingrese un numero de telefono valido");
+      return;
+    }
+
+    final existingUser = await getUserByEmail(emailController.text);
+    if (existingUser != null) {
+      Navigator.pop(context);
+      showErrorMsg("Ya existe una cuenta con este correo electronico");
+      return;
+    }
+
     final res = await FirebaseAuth.instance.createUserWithEmailAndPassword(
       email: emailController.text,
       password: passwordController.text,
@@ -80,8 +116,7 @@ class _RegistroPageState extends State<RegistroPage> {
 
     if (res.user != null) {
       //send email verification
-
-      await res.user!.sendEmailVerification();
+      // await res.user!.sendEmailVerification();
 
       await createUserDocument(
         res.user!,
@@ -120,10 +155,10 @@ bool areFieldsEmpty() {
       passwordController.text.isEmpty ||
       fullnameController.text.isEmpty ||
       identityController.text.isEmpty ||
-      phoneController.text.isEmpty;
+      phoneController.text.isEmpty ||
+      latController.text.isEmpty ||
+      longController.text.isEmpty;
 }
-
-
 
   void showErrorMsg(String errorMsg) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -137,6 +172,50 @@ bool areFieldsEmpty() {
         backgroundColor: Colors.red,
       ),
     );
+  }
+
+  bool isEmailValid(String email) {
+    final emailRegex = RegExp(r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+    return emailRegex.hasMatch(email);
+  }
+
+  bool isPasswordValid(String password) {
+    return password.length >= 6;
+  }
+
+  bool isFullNameValid(String fullName) {
+    final fullNameRegex = RegExp(r"[a-zA-Z]+ [a-zA-Z]+$");
+    return fullNameRegex.hasMatch(fullName);
+  }
+
+  bool isIdentityValid(String identity) {
+    final identityRegex = RegExp(r"[0-9]{7,8}");
+    return identityRegex.hasMatch(identity);
+  }
+
+  bool isPhoneValid(String phone) {
+    final phoneRegex = RegExp(r"[0-9]{7,8}");
+    return phoneRegex.hasMatch(phone);
+  }
+
+  Future<UserExist?> getUserByEmail(String email) async {
+    try {
+      final res = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (res.docs.isNotEmpty) {
+        final user = res.docs.first;
+        return UserExist.fromMap(user.data());
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error al obtener el usuario por email: $e');
+      return null;
+    }
   }
 
   Future<void> createUserDocument(User user, String fullName, String email, int ci, int phone, double lat, double long) async {
@@ -159,6 +238,8 @@ bool areFieldsEmpty() {
       Navigator.pop(context);
     }
   }
+
+  bool controlgetUserModifiedLocation = false; 
 
   Future<Map<String, String>> getUserLocation() async {
     try {
@@ -283,14 +364,6 @@ bool areFieldsEmpty() {
                 obscureText: false,
                 isEnabled: true,
                 isVisible: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, ingrese un correo electrónico';
-                  } else if (!value.contains('@')) {
-                    return 'Por favor, ingrese un correo electrónico válido';
-                  }
-                  return null;
-                },
               ),
 
               const SizedBox(height: 10),
@@ -330,12 +403,6 @@ bool areFieldsEmpty() {
                 obscureText: false,
                 isEnabled: true,
                 isVisible: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, ingrese su nombre completo';
-                  }
-                  return null;
-                }
               ),
               
               const SizedBox(height: 10),
@@ -364,28 +431,7 @@ bool areFieldsEmpty() {
                 isVisible: true,
               ),
 
-              const SizedBox(height: 10),
-              
-              /* DropdownButtonFormField(
-                value: selectedRole,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedRole = newValue!;
-                  });
-                },
-                items: roles.map((String role) {
-                  return DropdownMenuItem(
-                    value: role,
-                    child: Text(role),
-                  );
-                }).toList(),
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Seleccione un Rol',
-                )
-              ), */
-              
-              
+              const SizedBox(height: 10),              
               FutureBuilder<Map<String, String>>(
                 future: getUserModifiedLocation(),
                 builder: (context, snapshot) {

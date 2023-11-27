@@ -11,7 +11,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:miamiga_app/components/headers.dart';
 import 'package:miamiga_app/components/my_important_btn.dart';
 import 'package:miamiga_app/components/my_textfield.dart'; // ignore: unused_import
-import 'package:miamiga_app/pages/edit_perfil.dart';
 import 'package:miamiga_app/pages/network_helper.dart';
 import 'package:miamiga_app/resources/image_data.dart';
 import 'package:miamiga_app/utils/utils.dart';
@@ -27,6 +26,7 @@ class PerfilScreen extends StatefulWidget {
 
 class _PerfilScreenState extends State<PerfilScreen> {
   final ciController = TextEditingController();
+  final emailController = TextEditingController();
   final fullnameController = TextEditingController();
   final phoneController = TextEditingController();
   final locationController = TextEditingController();
@@ -84,6 +84,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
         if (documentSnapshot.exists) {
           // Fetch user data including latitude and longitude
           ciController.text = documentSnapshot['ci'].toString();
+          emailController.text = documentSnapshot['email'];
           fullnameController.text = documentSnapshot['fullname'];
           phoneController.text = documentSnapshot['phone'].toString();
           double latitude = documentSnapshot['lat'] as double;
@@ -193,13 +194,23 @@ class _PerfilScreenState extends State<PerfilScreen> {
           content: const Text("Quieres guardar la imagen?"),
           actions: <Widget>[
             TextButton(
-              child: const Text("Cancelar"),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: const Text("Guardar"),
+              child: const Text(
+                "Guardar",
+                style: TextStyle(
+                  color: Colors.red,
+                ),
+              ),
               onPressed: () {
                 saveProfileImage();
                 Navigator.of(context).pop();
@@ -318,6 +329,15 @@ class _PerfilScreenState extends State<PerfilScreen> {
                               ),
                               const SizedBox(height: 15),
                               MyTextField(
+                                controller: emailController,
+                                text: 'Correo Electrónico',
+                                hintText: 'Correo Electrónico',
+                                obscureText: false,
+                                isEnabled: false,
+                                isVisible: true,
+                              ),
+                              const SizedBox(height: 15),
+                              MyTextField(
                                 controller: fullnameController,
                                 text: 'Nombre Completo',
                                 hintText: 'Nombre Completo',
@@ -350,17 +370,19 @@ class _PerfilScreenState extends State<PerfilScreen> {
                             ],
                           );
                         }
-                      }),
-                  const SizedBox(height: 50),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                    child: Text(
-                      widget.user != null
-                          ? 'Iniciado como: ${widget.user?.email}'
-                          : 'Usuario desconocido',
-                      style: const TextStyle(fontSize: 20),
+                      }
                     ),
-                  ),
+                  // const SizedBox(height: 50),
+                  // Padding(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                  //   child: Text(
+                  //     widget.user != null
+                  //         ? 'Iniciado como: ${widget.user?.email}'
+                  //         : 'Usuario desconocido',
+                  //     style: const TextStyle(fontSize: 20),
+                  //   ),
+                  // ),
+                  // const SizedBox(height: 25),
                 ],
               ),
             ],

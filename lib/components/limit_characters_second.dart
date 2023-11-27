@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-class MyTextField extends StatefulWidget {
+class LimitCharacterTwo extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final String text;
   final bool obscureText;
   final bool isEnabled;
   final bool isVisible;
-  
-  const MyTextField({
+
+  const LimitCharacterTwo({
     Key? key,
     required this.controller,
     required this.hintText,
@@ -16,20 +16,19 @@ class MyTextField extends StatefulWidget {
     required this.obscureText,
     required this.isEnabled,
     required this.isVisible,
-    
   }) : super(key: key);
 
   @override
-  State<MyTextField> createState() => _MyTextFieldState();
+  State<LimitCharacterTwo> createState() => _LimitCharacterTwoState();
 }
 
-class _MyTextFieldState extends State<MyTextField> {
+class _LimitCharacterTwoState extends State<LimitCharacterTwo> {
   bool isFocused = false;
   bool isPasswordVisible = false;
+  int characterCount = 0;
 
   @override
   Widget build(BuildContext context) {
-
     return Visibility(
       visible: widget.isVisible,
       child: Padding(
@@ -50,8 +49,8 @@ class _MyTextFieldState extends State<MyTextField> {
                 TextField(
                   controller: widget.controller,
                   obscureText: widget.obscureText && !isPasswordVisible,
-                  // maxLines: 5,
-                  // maxLength: 30,
+                  maxLines: 4,
+                  maxLength: 150,
                   decoration: InputDecoration(
                     enabledBorder: const OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.white),
@@ -68,6 +67,11 @@ class _MyTextFieldState extends State<MyTextField> {
                   onTap: () {
                     setState(() {
                       isFocused = true;
+                    });
+                  },
+                  onChanged: (value) {
+                    setState(() {
+                      characterCount = value.length;
                     });
                   },
                   onSubmitted: (value) {
@@ -97,6 +101,17 @@ class _MyTextFieldState extends State<MyTextField> {
                   ),
               ],
             ),
+
+            // if (characterCount > 100) ...[
+            //   const SizedBox(height: 8),
+            //   const Text(
+            //     'Alcanzaste el máximo de caracteres',
+            //     style: TextStyle(
+            //       color: Colors.red,
+            //       fontSize: 12,
+            //     ),
+            //   ),
+            // ],
           ],
         ),
       ),

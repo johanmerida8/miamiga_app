@@ -5,6 +5,25 @@ import 'package:flutter/material.dart';
 class AuthPage extends StatelessWidget {
   const AuthPage({super.key});
 
+  // Future<bool> _isProfileComplete(String userId) async {
+  //   try {
+  //     final snapshot =
+  //         await FirebaseFirestore.instance.collection('users').doc(userId).get();
+  //     if (snapshot.exists) {
+  //       final userData = snapshot.data() as Map<String, dynamic>;
+
+  //       return userData['fullname'] != null &&
+  //           userData['phone'] != null &&
+  //           userData['lat'] != null &&
+  //           userData['long'] != null;
+  //     }
+  //     return false;
+  //   } catch (e) {
+  //     print('Error checking profile completeness: $e');
+  //     return false;
+  //   }
+  // }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,11 +45,14 @@ class AuthPage extends StatelessWidget {
                     return Text('Error: ${roleSnapshot.error}');
                   } else {
                     final role = roleSnapshot.data;
+                    // final isProfileComplete = _isProfileComplete(snapshot.data!.uid);
                     if (role == 'Supervisor') {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         Navigator.pushReplacementNamed(context, '/screens_supervisor');
                       });
-                    } else {
+                    }
+                    
+                    else {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         Navigator.pushReplacementNamed(context, '/screens_usuario');
                       });
